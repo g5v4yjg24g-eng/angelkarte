@@ -8,7 +8,9 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css">
 <style>
-:root{--bg:#0f1a1f;--card:#17262d;--line:#2a4049;--tx:#e5ecef;--mu:#8fa6ae;--ac:#3fa57a;--bl:#3b82f6}
+:root{--bg:#0f1a1f;--card:#17262d;--line:#2a4049;--tx:#e5ecef;--mu:#8fa6ae;--ac:#3fa57a;--bl:#3b82f6;--ov:#0f1a1fe6;--warn:#4a3b12}
+:root[data-theme=light]{--bg:#eef3f5;--card:#fff;--line:#c9d6db;--tx:#14232a;--mu:#5a6f78;--ov:#ffffffe6;--warn:#fde9a8}
+.sm{position:absolute;z-index:500;right:12px;border:1px solid var(--line);background:var(--card);color:var(--tx);border-radius:24px;padding:10px 14px;font-size:14px}
 *{box-sizing:border-box}
 body{margin:0;font:16px system-ui,sans-serif;background:var(--bg);color:var(--tx);height:100dvh;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top)}
 nav{display:flex;background:var(--card);border-bottom:1px solid var(--line)}
@@ -18,22 +20,22 @@ section{display:none;flex:1;min-height:0;position:relative}
 section.on{display:block}
 .scroll{overflow:auto;padding:12px;max-width:900px;margin:auto;width:100%}
 #map{position:absolute;inset:0;background:#1b2a30}
-#status{position:absolute;left:8px;bottom:calc(84px + env(safe-area-inset-bottom));z-index:500;background:#0f1a1fd9;padding:4px 8px;border-radius:6px;font-size:12px;color:var(--mu);max-width:60%}
+#status{position:absolute;left:8px;bottom:calc(84px + env(safe-area-inset-bottom));z-index:500;background:var(--ov);padding:4px 8px;border-radius:6px;font-size:12px;color:var(--mu);max-width:60%}
 .fab{position:absolute;z-index:500;right:12px;border:0;border-radius:28px;padding:14px 18px;font-size:16px;font-weight:600;background:var(--ac);color:#fff;box-shadow:0 2px 8px #0008}
 #gps{bottom:calc(84px + env(safe-area-inset-bottom))}
-#quick{position:absolute;z-index:500;left:0;right:0;bottom:0;display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:8px 8px calc(8px + env(safe-area-inset-bottom));background:#0f1a1fe6}
+#quick{position:absolute;z-index:500;left:0;right:0;bottom:0;display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:8px 8px calc(8px + env(safe-area-inset-bottom));background:var(--ov)}
 #quick button{height:62px;border:0;border-radius:12px;font-weight:700;font-size:15px;color:#111}
-#bk{position:absolute;z-index:600;left:12px;right:12px;max-width:480px;bottom:calc(142px + env(safe-area-inset-bottom));background:#4a3b12;border-radius:10px;padding:10px;font-size:14px;display:flex;flex-direction:column;gap:8px}
+#bk{position:absolute;z-index:600;left:12px;right:12px;max-width:480px;bottom:calc(142px + env(safe-area-inset-bottom));background:var(--warn);border-radius:10px;padding:10px;font-size:14px;display:flex;flex-direction:column;gap:8px}
 #bk[hidden]{display:none}
 #bk .row{margin:0}
 #flt{top:10px;background:var(--card);border:1px solid var(--line)}
-#legend{position:absolute;z-index:500;left:8px;top:8px;background:#0f1a1fe6;border-radius:8px;padding:6px 10px;font-size:12px}
+#legend{position:absolute;z-index:500;left:8px;top:8px;background:var(--ov);border-radius:8px;padding:6px 10px;font-size:12px}
 #legend i{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:5px;vertical-align:-1px}
 .pin{width:20px;height:20px;border-radius:50%;border:3px solid #fff;box-shadow:0 1px 4px #000a}
 .pin.hl{transform:scale(1.5);border-color:#f0f}
 label{display:block;font-size:13px;color:var(--mu);margin:8px 0}
 input,select,textarea,button{font:inherit}
-input:not([type=checkbox]),select,textarea{width:100%;padding:11px;margin-top:3px;background:#0f1a1f;color:var(--tx);border:1px solid var(--line);border-radius:8px}
+input:not([type=checkbox]),select,textarea{width:100%;padding:11px;margin-top:3px;background:var(--bg);color:var(--tx);border:1px solid var(--line);border-radius:8px}
 .chk{color:var(--tx)}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
 .btn{padding:12px 16px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--tx)}
@@ -48,13 +50,14 @@ summary{padding:10px 0;cursor:pointer}
 .bar{display:flex;align-items:center;gap:8px;margin:4px 0;font-size:14px}.bar span:first-child{width:130px;flex:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bar b{display:block;height:14px;background:var(--ac);border-radius:3px}
 .kp{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px}.kp div{background:var(--card);border-radius:10px;padding:10px;text-align:center}.kp b{font-size:26px;display:block}
-.warn{background:#4a3b12;border-radius:8px;padding:8px 10px;font-size:13px;margin:8px 0}
+.warn{background:var(--warn);border-radius:8px;padding:8px 10px;font-size:13px;margin:8px 0}
 h3{margin:18px 0 6px}small,.mu{color:var(--mu)}
 </style></head><body>
-<nav id="nav"><button data-v="map" class="on">Karte</button><button data-v="list">Liste</button><button data-v="stats">Statistik</button><button data-v="data">Daten</button></nav>
+<nav id="nav"><button data-v="map" class="on">Karte</button><button data-v="list">Liste</button><button data-v="stats">Statistik</button><button data-v="data">Daten</button><button id="theme" style="flex:0 0 52px" title="Hell/Dunkel">◐</button></nav>
 
 <section id="v-map" class="on"><div id="map"></div>
 <div id="legend"></div><button class="fab" id="flt">Filter ▾</button>
+<button class="sm" id="sess" style="top:56px">⏱ Ausflug starten</button><button class="sm" id="heat" style="top:102px">Heatmap</button><button class="sm" id="loc" style="top:148px">◎ Standort</button>
 <button class="fab" id="gps">＋ Hier (GPS)</button><div id="status">Lade Seeumrisse …</div>
 <div id="bk" hidden><span id="bkt"></span><div class="row"><button class="btn p" id="bkNow">Jetzt sichern</button><button class="btn" id="bkLater">Später</button></div></div>
 <div id="quick"><button data-r="bite" style="background:#facc15">Biss</button><button data-r="lost_hooked" style="background:#fb923c">Verloren</button><button data-r="caught" style="background:#22c55e">Gefangen</button><button data-r="seen" style="background:#60a5fa">Gesehen</button></div></section>
@@ -63,7 +66,7 @@ h3{margin:18px 0 6px}small,.mu{color:var(--mu)}
 <section id="v-stats"><div class="scroll" id="stats"></div></section>
 <section id="v-data"><div class="scroll">
 <h3>Datensicherung</h3>
-<p class="mu">Alle Daten liegen nur in diesem Browser (IndexedDB) auf diesem Gerät. Sichere sie regelmäßig als JSON.</p>
+<p class="mu">Alle Daten liegen nur in diesem Browser (IndexedDB) auf diesem Gerät. Sichere sie regelmäßig als JSON (Fotos machen die Datei größer).</p>
 <div class="row"><button class="btn p" id="exJ">Export JSON</button><button class="btn" id="exC">Export CSV</button></div>
 <label>Import (JSON aus diesem Export; vorhandene Einträge mit gleicher ID werden überschrieben)<input type="file" id="imp" accept=".json,application/json"></label>
 <h3>Seeumrisse</h3><p class="mu" id="lakeInfo"></p><button class="btn" id="relake">Seeumrisse neu von OpenStreetMap laden</button>
@@ -77,6 +80,7 @@ h3{margin:18px 0 6px}small,.mu{color:var(--mu)}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.heat/0.2.0/leaflet-heat.js"></script>
 <script>
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -89,17 +93,17 @@ const FIELDS=[
 ['Grunddaten',1,[['date','Datum','date',0,{req:1}],['time','Uhrzeit','time',0,{req:1}],['lake','Gewässer','select',LAKES,{req:1}],['result','Ergebnis','select',Object.entries(RES).map(([k,v])=>[k,v[0]]),{req:1}],['species','Fischart','select',SPECIES],['guess','Fischart ist nur eine Vermutung','check']]],
 ['Größe',0,[['lenEst','Geschätzte Länge (cm)','number',0,{max:250}],['lenMeas','Gemessene Länge (cm)','number',0,{max:250}],['weight','Gewicht (g, geschätzt)','number',0,{max:100000}],['sizeNote','Weitere Angaben','text']]],
 ['Methode & Köder',0,[['method','Angelmethode','select',METHODS],['bait','Köder (Name/Typ)','text'],['color','Köderfarbe','text'],['baitWeight','Ködergewicht (g)','number',0,{max:200}],['retrieve','Köderführung','select',['Gleichmäßig einholen','Faulenzen','Jiggen','Stop-and-go','Andere']],['gear','Rute / Rolle / Schnur / Vorfach','text']]],
-['Wetter & Wasser',0,[['weather','Wetter','select',['sonnig','bewölkt','Regen','wechselhaft']],['temp','Temperatur (°C)','number',0,{min:-40,max:50}],['wind','Windstärke (Bft)','number',0,{max:12}],['windDir','Windrichtung','select',['N','NO','O','SO','S','SW','W','NW']],['clouds','Bewölkung','select',['0–25 %','25–50 %','50–75 %','75–100 %']],['turbidity','Wassertrübung','select',['klar','leicht trüb','trüb']],['plants','Wasserpflanzen / Algen','select',['keine','wenig','viel']],['depth','Tiefe (m, ungefähr)','number',0,{max:100}],['waterTemp','Wassertemperatur (°C)','number',0,{min:0,max:40}]]],
+['Wetter & Wasser',0,[['weather','Wetter','select',['sonnig','bewölkt','Regen','wechselhaft']],['temp','Temperatur (°C)','number',0,{min:-40,max:50}],['wind','Windstärke (Bft)','number',0,{max:12}],['windDir','Windrichtung','select',['N','NO','O','SO','S','SW','W','NW']],['clouds','Bewölkung','select',['0–25 %','25–50 %','50–75 %','75–100 %']],['turbidity','Wassertrübung','select',['klar','leicht trüb','trüb']],['plants','Wasserpflanzen / Algen','select',['keine','wenig','viel']],['depth','Tiefe (m, ungefähr)','number',0,{max:100}],['waterTemp','Wassertemperatur (°C)','number',0,{min:0,max:40}],['pressure','Luftdruck (hPa)','number',0,{min:850,max:1100}],['pressTrend','Luftdruck-Trend (3 h)','select',['fallend','stabil','steigend']]]],
 ['Sonstiges',0,[['intensity','Intensität des Kontakts','select',['1 (zaghaft)','2','3','4','5 (heftig)']],['released','Zurückgesetzt / entnommen','select',['zurückgesetzt','entnommen']],['notes','Notizen','area']]]];
 const NUMS=new Set(FIELDS.flatMap(s=>s[2]).filter(f=>f[2]==='number').map(f=>f[0]));
 
 /* ---------- IndexedDB ---------- */
-let db,entries=[];
-const open=()=>new Promise((ok,no)=>{const r=indexedDB.open('angelkarte',1);r.onupgradeneeded=()=>{r.result.createObjectStore('entries',{keyPath:'id'});r.result.createObjectStore('meta')};r.onsuccess=()=>{db=r.result;ok()};r.onerror=()=>no(r.error)});
+let db,entries=[],sessions=[],curSess=null;
+const open=()=>new Promise((ok,no)=>{const r=indexedDB.open('angelkarte',2);r.onupgradeneeded=()=>{const d=r.result;if(!d.objectStoreNames.contains('entries'))d.createObjectStore('entries',{keyPath:'id'});if(!d.objectStoreNames.contains('meta'))d.createObjectStore('meta');if(!d.objectStoreNames.contains('sessions'))d.createObjectStore('sessions',{keyPath:'id'})};r.onsuccess=()=>{db=r.result;ok()};r.onerror=()=>no(r.error)});
 const dbx=(st,mode,fn)=>new Promise((ok,no)=>{const t=db.transaction(st,mode),r=fn(t.objectStore(st));t.oncomplete=()=>ok(r&&r.result);t.onerror=()=>no(t.error);t.onabort=()=>no(t.error)});
 const put=e=>dbx('entries','readwrite',s=>s.put(e));
 const del=id=>dbx('entries','readwrite',s=>s.delete(id));
-async function reload(){entries=await dbx('entries','readonly',s=>s.getAll());render();checkBackup()}
+async function reload(){entries=await dbx('entries','readonly',s=>s.getAll());sessions=await dbx('sessions','readonly',s=>s.getAll());render();checkBackup()}
 
 /* ---------- Hilfen ---------- */
 const de=d=>d?d.split('-').reverse().join('.'):'';
@@ -116,8 +120,8 @@ $('#legend').innerHTML=Object.values(RES).map(v=>`<div><i style="background:${v[
 const icon=(r,h)=>L.divIcon({className:'',html:`<div class="pin ${h?'hl':''}" style="background:${col(r)}"></div>`,iconSize:[20,20],iconAnchor:[10,10],popupAnchor:[0,-10]});
 function popup(e){const len=e.lenMeas?e.lenMeas+' cm':e.lenEst?'ca. '+e.lenEst+' cm':'';
 return `<b>${de(e.date)} ${esc(e.time)} Uhr</b><br>${esc(RES[e.result]?.[0]||'–')} · ${esc(e.lake||'')}<br>`+
-(e.species?`Fisch: ${esc(e.species)}${e.guess?' (Vermutung)':''}<br>`:'')+(len?`Länge: ${len}<br>`:'')+(e.bait?`Köder: ${esc(e.bait)}<br>`:'')+(e.notes?`<i>${esc(e.notes.slice(0,120))}</i><br>`:'')+
-`<div style="margin-top:8px;display:flex;gap:6px"><button class="btn" onclick="editE('${e.id}')">Bearbeiten</button><button class="btn d" onclick="delE('${e.id}')">Löschen</button></div>`}
+(e.species?`Fisch: ${esc(e.species)}${e.guess?' (Vermutung)':''}<br>`:'')+(len?`Länge: ${len}<br>`:'')+(e.bait?`Köder: ${esc(e.bait)}<br>`:'')+(e.notes?`<i>${esc(e.notes.slice(0,120))}</i><br>`:'')+(e.photo?`<img src="${e.photo}" style="max-width:200px;border-radius:6px;display:block;margin:4px 0">`:'')+
+`<div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px"><button class="btn" onclick="editE('${e.id}')">Bearbeiten</button><button class="btn" onclick="moveE('${e.id}')">Verschieben</button><button class="btn d" onclick="delE('${e.id}')">Löschen</button></div>`}
 map.on('click',ev=>openForm({lat:ev.latlng.lat,lng:ev.latlng.lng}));
 $('#gps').onclick=()=>{if(!navigator.geolocation)return alert('Kein GPS verfügbar.');toast('Suche Position …');navigator.geolocation.getCurrentPosition(p=>{map.setView([p.coords.latitude,p.coords.longitude],18);toast(`GPS-Genauigkeit ca. ${Math.round(p.coords.accuracy)} m`);openForm({lat:p.coords.latitude,lng:p.coords.longitude})},er=>alert('Position nicht verfügbar: '+er.message+' (GPS braucht HTTPS bzw. localhost)'),{enableHighAccuracy:true,timeout:20000})};
 
@@ -161,9 +165,36 @@ function fld([n,l,t,o,x={}]){
  const num=t==='number'?`step="any" min="${x.min??0}" ${x.max!=null?`max="${x.max}"`:''} inputmode="decimal"`:'';
  return`<label>${l}<input name="${n}" type="${t}" ${num} ${x.req?'required':''}></label>`}
 $('#ff').innerHTML=FIELDS.map(([t,open,fs])=>open?`<div class="grid">${fs.map(fld).join('')}</div>`:`<details><summary>${t}</summary><div class="grid">${fs.map(fld).join('')}</div></details>`).join('');
+const DT=[...document.querySelectorAll('#ff details')];
+DT[1].insertAdjacentHTML('afterbegin','<div class="row"><select id="favSel"></select></div><div class="row"><button type="button" class="btn" id="favSave">★ Als Favorit speichern</button><button type="button" class="btn" id="favDel">Favorit löschen</button></div>');
+DT[2].insertAdjacentHTML('afterbegin','<div class="row"><button type="button" class="btn" id="wx">☁ Wetter automatisch eintragen</button></div><small id="wxs" class="mu"></small>');
+DT[3].insertAdjacentHTML('beforeend','<label>Foto<input type="file" id="ph" accept="image/*"></label><img id="phv" style="max-width:100%;border-radius:8px;display:none"><button type="button" class="btn" id="phx" style="display:none">Foto entfernen</button>');
+/* Köder-Favoriten */
+let favs=[];const FK=['method','bait','color','baitWeight','retrieve'];
+const favLabel=f=>[f.bait||f.method,f.color,f.baitWeight?f.baitWeight+' g':''].filter(Boolean).join(' · ');
+function favUI(){$('#favSel').innerHTML='<option value="">★ Favorit wählen …</option>'+favs.map((f,i)=>`<option value="${i}">${esc(favLabel(f))}</option>`).join('')}
+const favSave=()=>dbx('meta','readwrite',s=>s.put(favs,'favs'));
+$('#favSel').onchange=e=>{const f=favs[e.target.value];if(!f)return;FK.forEach(k=>{$('#fm').elements[k].value=f[k]??''})};
+$('#favSave').onclick=async()=>{const el=$('#fm').elements,f={};FK.forEach(k=>f[k]=el[k].value);if(!f.bait&&!f.method)return alert('Bitte erst Köder oder Methode eintragen.');favs.push(f);await favSave();favUI();toast('Favorit gespeichert.')};
+$('#favDel').onclick=async()=>{const i=$('#favSel').value;if(i===''||!confirm('Diesen Favoriten löschen?'))return;favs.splice(+i,1);await favSave();favUI()};
+/* Wetter (Open-Meteo, ohne Schlüssel) */
+const DIRS=['N','NO','O','SO','S','SW','W','NW'];
+async function weatherFor(lat,lng,date,time){
+ const age=(Date.now()-new Date(date))/864e5,base=age>80?'https://archive-api.open-meteo.com/v1/archive':'https://api.open-meteo.com/v1/forecast';
+ const j=await(await fetch(`${base}?latitude=${lat.toFixed(4)}&longitude=${lng.toFixed(4)}&start_date=${date}&end_date=${date}&hourly=temperature_2m,cloud_cover,wind_speed_10m,wind_direction_10m,surface_pressure,weather_code&wind_speed_unit=ms&timezone=Europe%2FBerlin`)).json(),h=j.hourly;
+ if(!h)throw Error(j.reason||'keine Daten');
+ const i=Math.min(23,Math.max(0,+time.slice(0,2)+(+time.slice(3,5)>=30?1:0))),g=k=>h[k][i],c=g('weather_code'),d=g('surface_pressure')-h.surface_pressure[Math.max(0,i-3)];
+ return{temp:Math.round(g('temperature_2m')*10)/10,wind:Math.min(12,Math.round(Math.pow(g('wind_speed_10m')/.836,2/3))),windDir:DIRS[Math.round(g('wind_direction_10m')/45)%8],clouds:['0–25 %','25–50 %','50–75 %','75–100 %'][Math.min(3,Math.floor(g('cloud_cover')/25))],weather:c<=1?'sonnig':c<=48?'bewölkt':(c>=51&&c<=67)||c>=80?'Regen':'wechselhaft',pressure:Math.round(g('surface_pressure')),pressTrend:d<-1?'fallend':d>1?'steigend':'stabil'}}
+$('#wx').onclick=async()=>{const el=$('#fm').elements;if(!el.date.value||!el.time.value)return;$('#wxs').textContent='Lade …';
+ try{const w=await weatherFor(cur.lat,cur.lng,el.date.value,el.time.value);for(const k in w)if(el[k]&&el[k].value==='')el[k].value=w[k];$('#wxs').textContent='Leere Felder gefüllt (Open-Meteo: Modellwerte für den Ort, keine Messung am See).'}catch(e){$('#wxs').textContent='Fehlgeschlagen: '+e.message}};
+/* Foto */
+let curPhoto='';
+const phShow=()=>{$('#phv').src=curPhoto;$('#phv').style.display=curPhoto?'block':'none';$('#phx').style.display=curPhoto?'block':'none'};
+$('#ph').onchange=e=>{const f=e.target.files[0];if(!f)return;const im=new Image();im.onload=()=>{const k=Math.min(1,1024/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=im.width*k;c.height=im.height*k;c.getContext('2d').drawImage(im,0,0,c.width,c.height);curPhoto=c.toDataURL('image/jpeg',.7);phShow();URL.revokeObjectURL(im.src)};im.src=URL.createObjectURL(f);e.target.value=''};
+$('#phx').onclick=()=>{curPhoto='';phShow()};
 let cur=null;
 function openForm(e){
- const isNew=!e.id;cur=isNew?{id:crypto.randomUUID(),lat:e.lat,lng:e.lng,created:Date.now(),...now(),lake:detectLake(e.lat,e.lng)}:{...e};
+ const isNew=!e.id;cur=isNew?{id:crypto.randomUUID(),lat:e.lat,lng:e.lng,created:Date.now(),...now(),lake:detectLake(e.lat,e.lng),sessionId:curSess?.id}:{...e};curPhoto=cur.photo||'';phShow();$('#wxs').textContent='';
  const f=$('#fm');for(const el of f.elements){if(!el.name)continue;const v=cur[el.name];if(el.type==='checkbox')el.checked=!!v;else el.value=v??''}
  $('#ft').textContent=isNew?'Neuer Fischkontakt':'Eintrag bearbeiten';
  $('#fc').textContent=`${cur.lat.toFixed(6)}, ${cur.lng.toFixed(6)}`;
@@ -172,7 +203,7 @@ function openForm(e){
 $('#fx').onclick=()=>$('#fdlg').close();
 $('#fm').onsubmit=async ev=>{
  const f=$('#fm');if(!f.checkValidity())return;
- const d={...cur,updated:Date.now()};
+ const d={...cur,updated:Date.now(),photo:curPhoto};
  for(const el of f.elements){if(!el.name)continue;d[el.name]=el.type==='checkbox'?el.checked:NUMS.has(el.name)?(el.value===''?null:+el.value):el.value}
  try{await put(d);await reload();hlId=null}catch(e){ev.preventDefault();alert('Speichern fehlgeschlagen: '+e.message)}
 };
@@ -196,6 +227,7 @@ function render(){
  fe.forEach(e=>{const m=L.marker([e.lat,e.lng],{icon:icon(e.result,e.id===hlId)}).bindPopup(()=>popup(e));markers.set(e.id,m);cluster.addLayer(m)});
  $('#list').innerHTML=(fe.length?'':'<p class="mu">Noch keine Einträge (oder durch Filter ausgeblendet). Tippe auf die Karte, um den ersten Fischkontakt anzulegen.</p>')+sorted(fe).map(e=>`<div class="it" data-id="${e.id}"><div class="pin" style="background:${col(e.result)}"></div><div><b>${de(e.date)} ${esc(e.time)}</b> · ${esc(RES[e.result]?.[0]||'–')}<br><small>${esc(e.lake||'')} ${e.species?'· '+esc(e.species)+(e.guess?' (?)':''):''} ${e.bait?'· '+esc(e.bait):''}</small></div></div>`).join('');
  $('#cnt').textContent=`${entries.length} Einträge gespeichert.`;
+ if(heatL)heatL.setLatLngs(fe.filter(e=>e.result!=='seen').map(e=>[e.lat,e.lng,e.result==='caught'?1:.6]));
  if($('#v-stats').classList.contains('on'))stats(fe);
 }
 $('#list').onclick=ev=>{const it=ev.target.closest('.it');if(!it)return;const id=it.dataset.id,e=entries.find(x=>x.id===id);hlId=id;show('map');render();map.setView([e.lat,e.lng],Math.max(map.getZoom(),18));const m=markers.get(id);cluster.zoomToShowLayer(m,()=>m.openPopup())};
@@ -211,11 +243,13 @@ function stats(fe=filtered()){
  const hb=tally(con,e=>e.time?String(Math.floor(+e.time.slice(0,2)/3)*3).padStart(2,'0')+'–'+String(Math.floor(+e.time.slice(0,2)/3)*3+3).padStart(2,'0')+' Uhr':'');
  const mo=tally(con,e=>e.date?['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'][+e.date.slice(5,7)-1]:'');
  const lk=Object.fromEntries(LAKES.map(l=>[`${l}  (${caught.filter(e=>e.lake===l).length} Fänge)`,con.filter(e=>e.lake===l).length]));
+ const ss=sessions.filter(x=>x.end).sort((a,b)=>b.start-a.start),hrs=ss.reduce((a,x)=>a+(x.end-x.start),0)/36e5,sc=x=>entries.filter(e=>e.sessionId===x.id&&e.result!=='seen'),scn=ss.reduce((a,x)=>a+sc(x).length,0),scc=ss.reduce((a,x)=>a+sc(x).filter(e=>e.result==='caught').length,0);
+ const sessHtml=`${bars('Luftdruck-Trend (Kontakte)',tally(con,e=>e.pressTrend))}<h3>Ausflüge</h3>`+(ss.length?`<p>${ss.length} Ausflüge, ${fmtDur(hrs*36e5)} gesamt · ${(scn/hrs).toFixed(2).replace('.',',')} Kontakte/Std. · ${(scc/hrs).toFixed(2).replace('.',',')} Fänge/Std. · ${ss.filter(x=>!sc(x).length).length} ohne Kontakt</p>${ss.length<5?'<div class="warn">Erst '+ss.length+' Ausflüge – die Raten sind noch nicht aussagekräftig.</div>':''}`+ss.slice(0,10).map(x=>`<div class="bar"><span>${new Date(x.start).toLocaleDateString('de-DE')}</span><span style="width:auto">${fmtDur(x.end-x.start)} · ${sc(x).length} Kontakte · ${sc(x).filter(e=>e.result==='caught').length} Fänge</span></div>`).join(''):'<p class="mu">Noch keine beendeten Ausflüge. Starte einen mit „Ausflug starten“ auf der Karte.</p>');
  $('#stats').innerHTML=`<div class="kp"><div><b>${con.length}</b>Fischkontakte</div><div><b>${caught.length}</b>Gefangen</div><div><b>${lost.length}</b>Verloren</div><div><b>${bites.length}</b>Nur Biss</div><div><b>${fe.length-con.length}</b>Sichtungen</div></div>
  <p class="mu">„Kontakte“ umfasst Bisse, verlorene und gefangene Fische (ohne Sichtungen). Fänge sind eine Teilmenge davon.${active()?' Aktive Filter wirken auch hier.':''}</p>
  ${con.length<30?`<div class="warn">Bisher nur ${con.length} Kontakte: Unterschiede zwischen Ködern, Zeiten oder Gewässern sind bei so wenigen Daten Zufall und keine belastbaren Aussagen.</div>`:''}
  ${bars('Fischarten (alle Einträge, auch Vermutungen)',tally(fe,e=>e.species))}${bars('Köder (Kontakte)',baitRows)}${bars('Angelmethoden (Kontakte)',mRows)}${bars('Tageszeit (Kontakte)',hb)}${bars('Monate (Kontakte)',mo)}${bars('Gewässer-Vergleich (Kontakte)',lk)}
- <p class="mu">Heatmap/räumliche Auswertung ist in dieser Version nicht enthalten – die Cluster auf der Karte zeigen Häufungen.</p>`}
+ ${sessHtml}<p class="mu">Räumliche Auswertung: Button „Heatmap“ auf der Karte.</p>`}
 
 /* ---------- Navigation ---------- */
 function show(v){document.querySelectorAll('section').forEach(s=>s.classList.toggle('on',s.id==='v-'+v));document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));if(v==='map')setTimeout(()=>map.invalidateSize(),50);if(v==='stats')stats()}
@@ -224,7 +258,7 @@ $('#nav').onclick=e=>{if(e.target.dataset.v)show(e.target.dataset.v)};
 /* ---------- Export / Import ---------- */
 const dl=(name,txt,type)=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)};
 const stamp=()=>now().date;
-const exportJSON=async()=>{dl(`angelkarte-${stamp()}.json`,JSON.stringify({app:'angelkarte',version:1,exported:new Date().toISOString(),entries},null,1),'application/json');await dbx('meta','readwrite',s=>s.put(Date.now(),'lastBackup'));checkBackup()};
+const exportJSON=async()=>{dl(`angelkarte-${stamp()}.json`,JSON.stringify({app:'angelkarte',version:1,exported:new Date().toISOString(),entries,sessions},null,1),'application/json');await dbx('meta','readwrite',s=>s.put(Date.now(),'lastBackup'));checkBackup()};
 $('#exJ').onclick=exportJSON;
 $('#exC').onclick=()=>{const keys=['id','date','time','lake','lat','lng','result',...FIELDS.flatMap(s=>s[2].map(f=>f[0])).filter(k=>!['date','time','lake','result'].includes(k))];
  const q=v=>{v=v==null?'':String(v);return/[;"\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
@@ -233,22 +267,22 @@ $('#imp').onchange=async ev=>{const f=ev.target.files[0];if(!f)return;
  try{const j=JSON.parse(await f.text()),a=Array.isArray(j)?j:j.entries;if(!Array.isArray(a))throw Error('Keine Einträge gefunden');
   const ok=a.filter(e=>e&&e.id&&typeof e.lat==='number'&&typeof e.lng==='number');
   if(!ok.length||!confirm(`${ok.length} gültige Einträge importieren (${a.length-ok.length} übersprungen)?`))return;
-  for(const e of ok)await put(e);await reload();toast(ok.length+' Einträge importiert.')}catch(e){alert('Import fehlgeschlagen: '+e.message)}
+  for(const e of ok)await put(e);for(const x of(j.sessions||[]))if(x&&x.id&&x.start&&x.end)await dbx('sessions','readwrite',st=>st.put(x));await reload();toast(ok.length+' Einträge importiert.')}catch(e){alert('Import fehlgeschlagen: '+e.message)}
  ev.target.value=''};
 $('#wipe').onclick=async()=>{if(!entries.length)return alert('Keine Einträge vorhanden.');
  if(confirm('Zuerst alle Daten als JSON sichern?\nOK = Sicherung herunterladen, Abbrechen = ohne Sicherung weiter'))exportJSON();
  if(!confirm(`Wirklich ALLE ${entries.length} Einträge endgültig löschen?`))return;
- await dbx('entries','readwrite',s=>s.clear());await reload()};
+ await dbx('entries','readwrite',s=>s.clear());await dbx('sessions','readwrite',s=>s.clear());await reload()};
 $('#relake').onclick=()=>loadLakes(true);
 
-(async()=>{try{await open();await reload();await loadLakes()}catch(e){toast('Fehler: '+e.message);alert('Speicher (IndexedDB) nicht verfügbar: '+e.message+'\nPrivater Modus?')}})();
+(async()=>{try{await open();favs=(await dbx('meta','readonly',s=>s.get('favs')))||[];favUI();curSess=(await dbx('meta','readonly',s=>s.get('active')))||null;sessUI();await reload();await loadLakes()}catch(e){toast('Fehler: '+e.message);alert('Speicher (IndexedDB) nicht verfügbar: '+e.message+'\nPrivater Modus?')}})();
 
 /* ---------- Schnellerfassung ---------- */
 let qBusy=false;
 function quick(result){
  if(qBusy)return;qBusy=true;
- const go=async(lat,lng,acc)=>{try{const e={id:crypto.randomUUID(),created:Date.now(),...now(),lat,lng,result,lake:detectLake(lat,lng)};
-  await put(e);await reload();map.setView([lat,lng],Math.max(map.getZoom(),17));
+ const go=async(lat,lng,acc)=>{try{const e={id:crypto.randomUUID(),created:Date.now(),...now(),lat,lng,result,lake:detectLake(lat,lng),sessionId:curSess?.id};
+  await put(e);weatherFor(lat,lng,e.date,e.time).then(w=>{Object.assign(entries.find(x=>x.id===e.id)||{},w);return put({...e,...w})}).catch(()=>{});await reload();map.setView([lat,lng],Math.max(map.getZoom(),17));
   toast(`${RES[result][0]} gespeichert${acc?` (GPS ±${Math.round(acc)} m)`:''} – Marker antippen zum Ergänzen`);
   const m=markers.get(e.id);if(m)cluster.zoomToShowLayer(m,()=>m.openPopup())}catch(er){alert('Speichern fehlgeschlagen: '+er.message)}qBusy=false};
  const fail=m=>{if(confirm(m+'\nEintrag stattdessen in der Kartenmitte speichern?')){const c=map.getCenter();go(c.lat,c.lng)}else qBusy=false};
@@ -272,4 +306,37 @@ $('#bkLater').onclick=()=>{bkSnooze=true;$('#bk').hidden=true};
 /* ---------- Offline / Installierbar ---------- */
 if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(()=>{});
 navigator.storage?.persist?.();
+
+/* ---------- Ausflüge ---------- */
+const fmtDur=ms=>{const m=Math.round(ms/6e4);return m>=60?`${Math.floor(m/60)} h ${m%60} min`:`${m} min`};
+function sessUI(){$('#sess').textContent=curSess?`⏹ Ausflug beenden (${fmtDur(Date.now()-curSess.start)})`:'⏱ Ausflug starten'}
+$('#sess').onclick=async()=>{
+ if(!curSess){curSess={id:crypto.randomUUID(),start:Date.now()};await dbx('meta','readwrite',st=>st.put(curSess,'active'));toast('Ausflug gestartet – neue Einträge werden ihm zugeordnet.')}
+ else{if(!confirm('Ausflug beenden?'))return;const x={...curSess,end:Date.now()};await dbx('sessions','readwrite',st=>st.put(x));await dbx('meta','readwrite',st=>st.delete('active'));curSess=null;await reload();toast('Ausflug gespeichert: '+fmtDur(x.end-x.start))}
+ sessUI()};
+setInterval(sessUI,60000);
+/* ---------- Heatmap ---------- */
+let heatL=null;
+$('#heat').onclick=()=>{
+ if(heatL){map.removeLayer(heatL);heatL=null;map.addLayer(cluster);$('#heat').textContent='Heatmap';return}
+ if(!L.heatLayer)return alert('Heatmap-Bibliothek nicht geladen (offline?).');
+ const c=filtered().filter(e=>e.result!=='seen');
+ heatL=L.heatLayer(c.map(e=>[e.lat,e.lng,e.result==='caught'?1:.6]),{radius:25,blur:20,maxZoom:18}).addTo(map);map.removeLayer(cluster);$('#heat').textContent='Heatmap aus';
+ toast(c.length<30?`Nur ${c.length} Kontakte: Häufungen sind bei so wenigen Daten Zufall, kein Beleg für gute Stellen.`:`${c.length} Kontakte (Fänge zählen stärker). Zeigt nur deine eigenen Einträge.`)};
+/* ---------- Live-Standort ---------- */
+let watchId=null,locL=null;
+$('#loc').onclick=()=>{
+ if(watchId!==null){navigator.geolocation.clearWatch(watchId);watchId=null;if(locL)map.removeLayer(locL);locL=null;$('#loc').textContent='◎ Standort';return}
+ if(!navigator.geolocation)return alert('Kein GPS verfügbar.');
+ let first=true;$('#loc').textContent='◎ Standort aus';
+ watchId=navigator.geolocation.watchPosition(p=>{const ll=[p.coords.latitude,p.coords.longitude];
+  if(!locL)locL=L.layerGroup([L.circle(ll,{radius:p.coords.accuracy,color:'#3b82f6',weight:1,fillOpacity:.1,interactive:false}),L.circleMarker(ll,{radius:8,color:'#fff',weight:2,fillColor:'#3b82f6',fillOpacity:1,interactive:false})]).addTo(map);
+  else{const[c,m]=locL.getLayers();c.setLatLng(ll).setRadius(p.coords.accuracy);m.setLatLng(ll)}
+  if(first){first=false;map.setView(ll,Math.max(map.getZoom(),17))}},er=>toast('Standort: '+er.message),{enableHighAccuracy:true,maximumAge:5000})};
+/* ---------- Marker verschieben ---------- */
+window.moveE=id=>{const m=markers.get(id),e=entries.find(x=>x.id===id);if(!m||!e)return;map.closePopup();m.dragging.enable();toast('Marker mit dem Finger an die richtige Stelle ziehen und loslassen.');
+ m.once('dragend',async()=>{m.dragging.disable();const p=m.getLatLng();e.lat=p.lat;e.lng=p.lng;e.lake=detectLake(p.lat,p.lng)||e.lake;e.updated=Date.now();await put(e);await reload();toast('Position aktualisiert.')})};
+/* ---------- Hell/Dunkel ---------- */
+try{document.documentElement.dataset.theme=localStorage.getItem('theme')||''}catch(e){}
+$('#theme').onclick=()=>{const t=document.documentElement.dataset.theme==='light'?'':'light';document.documentElement.dataset.theme=t;try{localStorage.setItem('theme',t)}catch(e){}};
 </script></body></html>
