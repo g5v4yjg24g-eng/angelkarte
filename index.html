@@ -2,6 +2,8 @@
 <html lang="de"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Angelkarte De Witt See</title>
+<link rel="manifest" href="manifest.json"><meta name="theme-color" content="#0f1a1f">
+<link rel="apple-touch-icon" href="icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css">
@@ -16,9 +18,14 @@ section{display:none;flex:1;min-height:0;position:relative}
 section.on{display:block}
 .scroll{overflow:auto;padding:12px;max-width:900px;margin:auto;width:100%}
 #map{position:absolute;inset:0;background:#1b2a30}
-#status{position:absolute;left:8px;bottom:8px;z-index:500;background:#0f1a1fd9;padding:4px 8px;border-radius:6px;font-size:12px;color:var(--mu);max-width:60%}
+#status{position:absolute;left:8px;bottom:calc(84px + env(safe-area-inset-bottom));z-index:500;background:#0f1a1fd9;padding:4px 8px;border-radius:6px;font-size:12px;color:var(--mu);max-width:60%}
 .fab{position:absolute;z-index:500;right:12px;border:0;border-radius:28px;padding:14px 18px;font-size:16px;font-weight:600;background:var(--ac);color:#fff;box-shadow:0 2px 8px #0008}
-#gps{bottom:calc(16px + env(safe-area-inset-bottom))}
+#gps{bottom:calc(84px + env(safe-area-inset-bottom))}
+#quick{position:absolute;z-index:500;left:0;right:0;bottom:0;display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:8px 8px calc(8px + env(safe-area-inset-bottom));background:#0f1a1fe6}
+#quick button{height:62px;border:0;border-radius:12px;font-weight:700;font-size:15px;color:#111}
+#bk{position:absolute;z-index:600;left:12px;right:12px;max-width:480px;bottom:calc(142px + env(safe-area-inset-bottom));background:#4a3b12;border-radius:10px;padding:10px;font-size:14px;display:flex;flex-direction:column;gap:8px}
+#bk[hidden]{display:none}
+#bk .row{margin:0}
 #flt{top:10px;background:var(--card);border:1px solid var(--line)}
 #legend{position:absolute;z-index:500;left:8px;top:8px;background:#0f1a1fe6;border-radius:8px;padding:6px 10px;font-size:12px}
 #legend i{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:5px;vertical-align:-1px}
@@ -48,7 +55,9 @@ h3{margin:18px 0 6px}small,.mu{color:var(--mu)}
 
 <section id="v-map" class="on"><div id="map"></div>
 <div id="legend"></div><button class="fab" id="flt">Filter ▾</button>
-<button class="fab" id="gps">＋ Hier (GPS)</button><div id="status">Lade Seeumrisse …</div></section>
+<button class="fab" id="gps">＋ Hier (GPS)</button><div id="status">Lade Seeumrisse …</div>
+<div id="bk" hidden><span id="bkt"></span><div class="row"><button class="btn p" id="bkNow">Jetzt sichern</button><button class="btn" id="bkLater">Später</button></div></div>
+<div id="quick"><button data-r="bite" style="background:#facc15">Biss</button><button data-r="lost_hooked" style="background:#fb923c">Verloren</button><button data-r="caught" style="background:#22c55e">Gefangen</button><button data-r="seen" style="background:#60a5fa">Gesehen</button></div></section>
 
 <section id="v-list"><div class="scroll" id="list"></div></section>
 <section id="v-stats"><div class="scroll" id="stats"></div></section>
@@ -90,7 +99,7 @@ const open=()=>new Promise((ok,no)=>{const r=indexedDB.open('angelkarte',1);r.on
 const dbx=(st,mode,fn)=>new Promise((ok,no)=>{const t=db.transaction(st,mode),r=fn(t.objectStore(st));t.oncomplete=()=>ok(r&&r.result);t.onerror=()=>no(t.error);t.onabort=()=>no(t.error)});
 const put=e=>dbx('entries','readwrite',s=>s.put(e));
 const del=id=>dbx('entries','readwrite',s=>s.delete(id));
-async function reload(){entries=await dbx('entries','readonly',s=>s.getAll());render()}
+async function reload(){entries=await dbx('entries','readonly',s=>s.getAll());render();checkBackup()}
 
 /* ---------- Hilfen ---------- */
 const de=d=>d?d.split('-').reverse().join('.'):'';
@@ -215,7 +224,7 @@ $('#nav').onclick=e=>{if(e.target.dataset.v)show(e.target.dataset.v)};
 /* ---------- Export / Import ---------- */
 const dl=(name,txt,type)=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)};
 const stamp=()=>now().date;
-const exportJSON=()=>dl(`angelkarte-${stamp()}.json`,JSON.stringify({app:'angelkarte',version:1,exported:new Date().toISOString(),entries},null,1),'application/json');
+const exportJSON=async()=>{dl(`angelkarte-${stamp()}.json`,JSON.stringify({app:'angelkarte',version:1,exported:new Date().toISOString(),entries},null,1),'application/json');await dbx('meta','readwrite',s=>s.put(Date.now(),'lastBackup'));checkBackup()};
 $('#exJ').onclick=exportJSON;
 $('#exC').onclick=()=>{const keys=['id','date','time','lake','lat','lng','result',...FIELDS.flatMap(s=>s[2].map(f=>f[0])).filter(k=>!['date','time','lake','result'].includes(k))];
  const q=v=>{v=v==null?'':String(v);return/[;"\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
@@ -233,4 +242,34 @@ $('#wipe').onclick=async()=>{if(!entries.length)return alert('Keine Einträge vo
 $('#relake').onclick=()=>loadLakes(true);
 
 (async()=>{try{await open();await reload();await loadLakes()}catch(e){toast('Fehler: '+e.message);alert('Speicher (IndexedDB) nicht verfügbar: '+e.message+'\nPrivater Modus?')}})();
+
+/* ---------- Schnellerfassung ---------- */
+let qBusy=false;
+function quick(result){
+ if(qBusy)return;qBusy=true;
+ const go=async(lat,lng,acc)=>{try{const e={id:crypto.randomUUID(),created:Date.now(),...now(),lat,lng,result,lake:detectLake(lat,lng)};
+  await put(e);await reload();map.setView([lat,lng],Math.max(map.getZoom(),17));
+  toast(`${RES[result][0]} gespeichert${acc?` (GPS ±${Math.round(acc)} m)`:''} – Marker antippen zum Ergänzen`);
+  const m=markers.get(e.id);if(m)cluster.zoomToShowLayer(m,()=>m.openPopup())}catch(er){alert('Speichern fehlgeschlagen: '+er.message)}qBusy=false};
+ const fail=m=>{if(confirm(m+'\nEintrag stattdessen in der Kartenmitte speichern?')){const c=map.getCenter();go(c.lat,c.lng)}else qBusy=false};
+ if(!navigator.geolocation)return fail('Kein GPS verfügbar.');
+ toast('Suche GPS …');
+ navigator.geolocation.getCurrentPosition(p=>go(p.coords.latitude,p.coords.longitude,p.coords.accuracy),er=>fail('Position nicht verfügbar ('+er.message+').'),{enableHighAccuracy:true,timeout:15000,maximumAge:15000});
+}
+document.querySelectorAll('#quick button').forEach(b=>b.onclick=()=>quick(b.dataset.r));
+
+/* ---------- Sicherungs-Erinnerung ---------- */
+let bkSnooze=false;
+async function checkBackup(){
+ const lb=(await dbx('meta','readonly',s=>s.get('lastBackup')))||0;
+ const n=entries.filter(e=>(e.updated||e.created||0)>lb).length;
+ const due=n>=5||(n>=1&&lb&&Date.now()-lb>14*864e5);
+ $('#bk').hidden=!due||bkSnooze;
+ $('#bkt').textContent=lb?`${n} neue/geänderte Einträge seit der letzten Sicherung (${new Date(lb).toLocaleDateString('de-DE')}). Jetzt als JSON sichern?`:`${n} Einträge wurden noch nie gesichert. Jetzt als JSON sichern?`}
+$('#bkNow').onclick=exportJSON;
+$('#bkLater').onclick=()=>{bkSnooze=true;$('#bk').hidden=true};
+
+/* ---------- Offline / Installierbar ---------- */
+if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(()=>{});
+navigator.storage?.persist?.();
 </script></body></html>
