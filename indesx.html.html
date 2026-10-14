@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Angelkarte De Witt See</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css">
+<style>
+:root{--bg:#0f1a1f;--card:#17262d;--line:#2a4049;--tx:#e5ecef;--mu:#8fa6ae;--ac:#3fa57a;--bl:#3b82f6}
+*{box-sizing:border-box}
+body{margin:0;font:16px system-ui,sans-serif;background:var(--bg);color:var(--tx);height:100dvh;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top)}
+nav{display:flex;background:var(--card);border-bottom:1px solid var(--line)}
+nav button{flex:1;padding:14px 4px;background:none;border:0;color:var(--mu);font-size:15px;border-bottom:3px solid transparent}
+nav button.on{color:var(--tx);border-color:var(--ac)}
+section{display:none;flex:1;min-height:0;position:relative}
+section.on{display:block}
+.scroll{overflow:auto;padding:12px;max-width:900px;margin:auto;width:100%}
+#map{position:absolute;inset:0;background:#1b2a30}
+#status{position:absolute;left:8px;bottom:8px;z-index:500;background:#0f1a1fd9;padding:4px 8px;border-radius:6px;font-size:12px;color:var(--mu);max-width:60%}
+.fab{position:absolute;z-index:500;right:12px;border:0;border-radius:28px;padding:14px 18px;font-size:16px;font-weight:600;background:var(--ac);color:#fff;box-shadow:0 2px 8px #0008}
+#gps{bottom:calc(16px + env(safe-area-inset-bottom))}
+#flt{top:10px;background:var(--card);border:1px solid var(--line)}
+#legend{position:absolute;z-index:500;left:8px;top:8px;background:#0f1a1fe6;border-radius:8px;padding:6px 10px;font-size:12px}
+#legend i{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+.pin{width:20px;height:20px;border-radius:50%;border:3px solid #fff;box-shadow:0 1px 4px #000a}
+.pin.hl{transform:scale(1.5);border-color:#f0f}
+label{display:block;font-size:13px;color:var(--mu);margin:8px 0}
+input,select,textarea,button{font:inherit}
+input:not([type=checkbox]),select,textarea{width:100%;padding:11px;margin-top:3px;background:#0f1a1f;color:var(--tx);border:1px solid var(--line);border-radius:8px}
+.chk{color:var(--tx)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
+.btn{padding:12px 16px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--tx)}
+.btn.p{background:var(--ac);border-color:var(--ac)}.btn.d{background:#8b2a2a;border-color:#8b2a2a}
+dialog{background:var(--card);color:var(--tx);border:1px solid var(--line);border-radius:12px;width:min(560px,96vw);max-height:92dvh;padding:14px}
+dialog::backdrop{background:#000a}
+details{border:1px solid var(--line);border-radius:8px;padding:2px 10px;margin:8px 0}
+summary{padding:10px 0;cursor:pointer}
+.row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}.row .btn{flex:1}
+.it{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:8px;cursor:pointer;display:flex;gap:10px;align-items:center}
+.it .pin{flex:none;width:16px;height:16px;border-width:2px}
+.bar{display:flex;align-items:center;gap:8px;margin:4px 0;font-size:14px}.bar span:first-child{width:130px;flex:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar b{display:block;height:14px;background:var(--ac);border-radius:3px}
+.kp{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px}.kp div{background:var(--card);border-radius:10px;padding:10px;text-align:center}.kp b{font-size:26px;display:block}
+.warn{background:#4a3b12;border-radius:8px;padding:8px 10px;font-size:13px;margin:8px 0}
+h3{margin:18px 0 6px}small,.mu{color:var(--mu)}
+</style></head><body>
+<nav id="nav"><button data-v="map" class="on">Karte</button><button data-v="list">Liste</button><button data-v="stats">Statistik</button><button data-v="data">Daten</button></nav>
+
+<section id="v-map" class="on"><div id="map"></div>
+<div id="legend"></div><button class="fab" id="flt">Filter ▾</button>
+<button class="fab" id="gps">＋ Hier (GPS)</button><div id="status">Lade Seeumrisse …</div></section>
+
+<section id="v-list"><div class="scroll" id="list"></div></section>
+<section id="v-stats"><div class="scroll" id="stats"></div></section>
+<section id="v-data"><div class="scroll">
+<h3>Datensicherung</h3>
+<p class="mu">Alle Daten liegen nur in diesem Browser (IndexedDB) auf diesem Gerät. Sichere sie regelmäßig als JSON.</p>
+<div class="row"><button class="btn p" id="exJ">Export JSON</button><button class="btn" id="exC">Export CSV</button></div>
+<label>Import (JSON aus diesem Export; vorhandene Einträge mit gleicher ID werden überschrieben)<input type="file" id="imp" accept=".json,application/json"></label>
+<h3>Seeumrisse</h3><p class="mu" id="lakeInfo"></p><button class="btn" id="relake">Seeumrisse neu von OpenStreetMap laden</button>
+<h3>Alles löschen</h3><button class="btn d" id="wipe">Alle Einträge löschen …</button>
+<p id="cnt" class="mu"></p></div></section>
+
+<dialog id="fdlg"><form id="fm" method="dialog"><b id="ft"></b> <small id="fc"></small><div id="ff"></div>
+<div class="row"><button type="button" class="btn" id="fx">Abbrechen</button><button class="btn p" id="fs">Speichern</button></div></form></dialog>
+
+<dialog id="filt"><b>Filter</b><div id="fb"></div><div class="row"><button class="btn" id="fr">Zurücksetzen</button><button class="btn p" id="fok">Fertig</button></div></dialog>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.js"></script>
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const RES={bite:['Biss / Kontakt','#facc15'],lost_hooked:['Gehakt, verloren','#fb923c'],lost_drill:['Im Drill verloren','#f97316'],caught:['Gefangen','#22c55e'],seen:['Gesehen / Beobachtung','#3b82f6']};
+const col=r=>RES[r]?RES[r][1]:'#9ca3af';
+const SPECIES=['Flussbarsch','Hecht','Zander','Karpfen','Schleie','Rotauge','Rotfeder','Brasse','Andere Fischart','Unbekannt']; // hier erweiterbar
+const METHODS=['Spinnfischen','Jiggen','Jigspinner','Chatterbait','Gummifisch','Wobbler','Spinner','Blinker','Drop Shot','Andere Methode'];
+const LAKES=['Großer De Witt See','Kleiner De Witt See'];
+const FIELDS=[
+['Grunddaten',1,[['date','Datum','date',0,{req:1}],['time','Uhrzeit','time',0,{req:1}],['lake','Gewässer','select',LAKES,{req:1}],['result','Ergebnis','select',Object.entries(RES).map(([k,v])=>[k,v[0]]),{req:1}],['species','Fischart','select',SPECIES],['guess','Fischart ist nur eine Vermutung','check']]],
+['Größe',0,[['lenEst','Geschätzte Länge (cm)','number',0,{max:250}],['lenMeas','Gemessene Länge (cm)','number',0,{max:250}],['weight','Gewicht (g, geschätzt)','number',0,{max:100000}],['sizeNote','Weitere Angaben','text']]],
+['Methode & Köder',0,[['method','Angelmethode','select',METHODS],['bait','Köder (Name/Typ)','text'],['color','Köderfarbe','text'],['baitWeight','Ködergewicht (g)','number',0,{max:200}],['retrieve','Köderführung','select',['Gleichmäßig einholen','Faulenzen','Jiggen','Stop-and-go','Andere']],['gear','Rute / Rolle / Schnur / Vorfach','text']]],
+['Wetter & Wasser',0,[['weather','Wetter','select',['sonnig','bewölkt','Regen','wechselhaft']],['temp','Temperatur (°C)','number',0,{min:-40,max:50}],['wind','Windstärke (Bft)','number',0,{max:12}],['windDir','Windrichtung','select',['N','NO','O','SO','S','SW','W','NW']],['clouds','Bewölkung','select',['0–25 %','25–50 %','50–75 %','75–100 %']],['turbidity','Wassertrübung','select',['klar','leicht trüb','trüb']],['plants','Wasserpflanzen / Algen','select',['keine','wenig','viel']],['depth','Tiefe (m, ungefähr)','number',0,{max:100}],['waterTemp','Wassertemperatur (°C)','number',0,{min:0,max:40}]]],
+['Sonstiges',0,[['intensity','Intensität des Kontakts','select',['1 (zaghaft)','2','3','4','5 (heftig)']],['released','Zurückgesetzt / entnommen','select',['zurückgesetzt','entnommen']],['notes','Notizen','area']]]];
+const NUMS=new Set(FIELDS.flatMap(s=>s[2]).filter(f=>f[2]==='number').map(f=>f[0]));
+
+/* ---------- IndexedDB ---------- */
+let db,entries=[];
+const open=()=>new Promise((ok,no)=>{const r=indexedDB.open('angelkarte',1);r.onupgradeneeded=()=>{r.result.createObjectStore('entries',{keyPath:'id'});r.result.createObjectStore('meta')};r.onsuccess=()=>{db=r.result;ok()};r.onerror=()=>no(r.error)});
+const dbx=(st,mode,fn)=>new Promise((ok,no)=>{const t=db.transaction(st,mode),r=fn(t.objectStore(st));t.oncomplete=()=>ok(r&&r.result);t.onerror=()=>no(t.error);t.onabort=()=>no(t.error)});
+const put=e=>dbx('entries','readwrite',s=>s.put(e));
+const del=id=>dbx('entries','readwrite',s=>s.delete(id));
+async function reload(){entries=await dbx('entries','readonly',s=>s.getAll());render()}
+
+/* ---------- Hilfen ---------- */
+const de=d=>d?d.split('-').reverse().join('.'):'';
+const now=()=>{const n=new Date(),p=x=>String(x).padStart(2,'0');return{date:`${n.getFullYear()}-${p(n.getMonth()+1)}-${p(n.getDate())}`,time:`${p(n.getHours())}:${p(n.getMinutes())}`}};
+const toast=m=>{const s=$('#status');s.textContent=m};
+const sorted=a=>[...a].sort((x,y)=>(y.date+y.time).localeCompare(x.date+x.time));
+
+/* ---------- Karte ---------- */
+const map=L.map('map',{zoomControl:true}).setView([51.31,6.25],12); // grobe Startansicht Region Nettetal, wird nach Laden der Seeumrisse ersetzt
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,referrerPolicy:'strict-origin-when-cross-origin',attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>-Mitwirkende'}).addTo(map);
+const cluster=L.markerClusterGroup({maxClusterRadius:35,spiderfyOnMaxZoom:true}).addTo(map);
+let markers=new Map(),lakes=[],lakeLayer=L.layerGroup().addTo(map),hlId=null;
+$('#legend').innerHTML=Object.values(RES).map(v=>`<div><i style="background:${v[1]}"></i>${v[0]}</div>`).join('')+'<div><i style="background:#9ca3af"></i>Nicht klassifiziert</div>';
+const icon=(r,h)=>L.divIcon({className:'',html:`<div class="pin ${h?'hl':''}" style="background:${col(r)}"></div>`,iconSize:[20,20],iconAnchor:[10,10],popupAnchor:[0,-10]});
+function popup(e){const len=e.lenMeas?e.lenMeas+' cm':e.lenEst?'ca. '+e.lenEst+' cm':'';
+return `<b>${de(e.date)} ${esc(e.time)} Uhr</b><br>${esc(RES[e.result]?.[0]||'–')} · ${esc(e.lake||'')}<br>`+
+(e.species?`Fisch: ${esc(e.species)}${e.guess?' (Vermutung)':''}<br>`:'')+(len?`Länge: ${len}<br>`:'')+(e.bait?`Köder: ${esc(e.bait)}<br>`:'')+(e.notes?`<i>${esc(e.notes.slice(0,120))}</i><br>`:'')+
+`<div style="margin-top:8px;display:flex;gap:6px"><button class="btn" onclick="editE('${e.id}')">Bearbeiten</button><button class="btn d" onclick="delE('${e.id}')">Löschen</button></div>`}
+map.on('click',ev=>openForm({lat:ev.latlng.lat,lng:ev.latlng.lng}));
+$('#gps').onclick=()=>{if(!navigator.geolocation)return alert('Kein GPS verfügbar.');toast('Suche Position …');navigator.geolocation.getCurrentPosition(p=>{map.setView([p.coords.latitude,p.coords.longitude],18);toast(`GPS-Genauigkeit ca. ${Math.round(p.coords.accuracy)} m`);openForm({lat:p.coords.latitude,lng:p.coords.longitude})},er=>alert('Position nicht verfügbar: '+er.message+' (GPS braucht HTTPS bzw. localhost)'),{enableHighAccuracy:true,timeout:20000})};
+
+/* ---------- Seeumrisse (OpenStreetMap/Overpass, zur Laufzeit; keine fest einprogrammierten Koordinaten) ---------- */
+const inPoly=(la,ln,r)=>{let c=false;for(let i=0,j=r.length-1;i<r.length;j=i++){const[a,b]=r[i],[x,y]=r[j];if((b>ln)!==(y>ln)&&la<(x-a)*(ln-b)/(y-b)+a)c=!c}return c};
+const lakeKey=n=>/klein/i.test(n)?LAKES[1]:/gro(ß|ss)/i.test(n)?LAKES[0]:'';
+function detectLake(la,ln){for(const l of lakes)if(l.key&&l.rings.some(r=>inPoly(la,ln,r)))return l.key;return''}
+async function fetchLakes(){
+ const q='[out:json][timeout:25];area["boundary"="administrative"]["name"="Nettetal"]->.a;(way(area.a)["natural"="water"]["name"~"Witt",i];relation(area.a)["natural"="water"]["name"~"Witt",i];);out geom;';
+ for(const u of['https://overpass-api.de/api/interpreter','https://overpass.kumi.systems/api/interpreter']){
+  try{const r=await fetch(u,{method:'POST',body:'data='+encodeURIComponent(q)});if(!r.ok)continue;const j=await r.json();if(Array.isArray(j.elements)&&j.elements.length)return j.elements}catch(e){}}
+ try{ // Fallback: Nominatim liefert Polygone direkt (OSM-Schreibweise: "De Wittsee")
+  const out=[];
+  for(const term of['De Wittsee Nettetal','De Witt See Nettetal','Wittsee Nettetal']){
+   const r=await fetch('https://nominatim.openstreetmap.org/search?q='+encodeURIComponent(term)+'&format=jsonv2&polygon_geojson=1&limit=10&accept-language=de');
+   for(const p of await r.json()){if(!p.geojson||!/Polygon/.test(p.geojson.type)||!/witt/i.test(p.display_name))continue;
+    const polys=p.geojson.type==='Polygon'?[p.geojson.coordinates]:p.geojson.coordinates;
+    polys.forEach(pl=>out.push({type:'way',tags:{name:p.name||p.display_name.split(',')[0]},geometry:pl[0].map(c=>({lat:c[1],lon:c[0]}))}))}
+   if(out.length)break}
+  return out}catch(e){return[]}}
+async function loadLakes(force){
+ let els=force?null:await dbx('meta','readonly',s=>s.get('lakes'));
+ if(!Array.isArray(els)||!els.length){els=await fetchLakes();if(els.length)await dbx('meta','readwrite',s=>s.put(els,'lakes'))}
+ lakeLayer.clearLayers();lakes=[];
+ for(const el of els){const name=el.tags?.name||'',key=lakeKey(name);let rings=[];
+  if(el.type==='way'&&el.geometry)rings=[el.geometry.map(p=>[p.lat,p.lon])];
+  else if(el.members)for(const m of el.members)if(m.geometry&&m.role==='outer')rings.push(m.geometry.map(p=>[p.lat,p.lon]));
+  const isWay=el.type==='way';lakes.push({name,key:isWay?key:'',rings:isWay?rings:[]});
+  rings.forEach(r=>L.polygon(r,{color:key===LAKES[1]?'#22d3ee':'#3b82f6',weight:2,fillOpacity:.12,interactive:false}).addTo(lakeLayer));}
+ const all=lakeLayer.getLayers();
+ if(all.length){map.fitBounds(L.featureGroup(all).getBounds().pad(.15));toast('Seeumrisse aus OpenStreetMap: '+[...new Set(lakes.map(l=>l.name||'(ohne Namen)'))].join(', '))}
+ else toast('Seeumrisse nicht geladen (offline oder bei OSM nicht gefunden) – Karte steht auf grober Startansicht, bitte selbst zum See navigieren.');
+ $('#lakeInfo').textContent=`${lakes.length} OSM-Objekt(e) gefunden. Die automatische Gewässer-Zuordnung funktioniert nur, wenn OSM die Seen mit „Groß“/„Klein“ im Namen führt – sonst bitte im Formular wählen.`;
+}
+
+/* ---------- Formular ---------- */
+function fld([n,l,t,o,x={}]){
+ if(t==='select')return`<label>${l}<select name="${n}" ${x.req?'required':''}><option value="">–</option>${o.map(v=>{const[a,b]=Array.isArray(v)?v:[v,v];return`<option value="${a}">${b}</option>`}).join('')}</select></label>`;
+ if(t==='check')return`<label class="chk"><input type="checkbox" name="${n}"> ${l}</label>`;
+ if(t==='area')return`<label>${l}<textarea name="${n}" rows="3"></textarea></label>`;
+ const num=t==='number'?`step="any" min="${x.min??0}" ${x.max!=null?`max="${x.max}"`:''} inputmode="decimal"`:'';
+ return`<label>${l}<input name="${n}" type="${t}" ${num} ${x.req?'required':''}></label>`}
+$('#ff').innerHTML=FIELDS.map(([t,open,fs])=>open?`<div class="grid">${fs.map(fld).join('')}</div>`:`<details><summary>${t}</summary><div class="grid">${fs.map(fld).join('')}</div></details>`).join('');
+let cur=null;
+function openForm(e){
+ const isNew=!e.id;cur=isNew?{id:crypto.randomUUID(),lat:e.lat,lng:e.lng,created:Date.now(),...now(),lake:detectLake(e.lat,e.lng)}:{...e};
+ const f=$('#fm');for(const el of f.elements){if(!el.name)continue;const v=cur[el.name];if(el.type==='checkbox')el.checked=!!v;else el.value=v??''}
+ $('#ft').textContent=isNew?'Neuer Fischkontakt':'Eintrag bearbeiten';
+ $('#fc').textContent=`${cur.lat.toFixed(6)}, ${cur.lng.toFixed(6)}`;
+ $('#fdlg').showModal();
+}
+$('#fx').onclick=()=>$('#fdlg').close();
+$('#fm').onsubmit=async ev=>{
+ const f=$('#fm');if(!f.checkValidity())return;
+ const d={...cur,updated:Date.now()};
+ for(const el of f.elements){if(!el.name)continue;d[el.name]=el.type==='checkbox'?el.checked:NUMS.has(el.name)?(el.value===''?null:+el.value):el.value}
+ try{await put(d);await reload();hlId=null}catch(e){ev.preventDefault();alert('Speichern fehlgeschlagen: '+e.message)}
+};
+window.editE=id=>{map.closePopup();openForm(entries.find(e=>e.id===id))};
+window.delE=async id=>{if(!confirm('Diesen Eintrag endgültig löschen?'))return;map.closePopup();await del(id);await reload()};
+
+/* ---------- Filter ---------- */
+const F={from:'',to:'',lake:'',species:'',kind:'',method:'',bait:''};
+const sel=(k,l,o)=>`<label>${l}<select data-f="${k}"><option value="">Alle</option>${o.map(v=>{const[a,b]=Array.isArray(v)?v:[v,v];return`<option value="${a}">${b}</option>`}).join('')}</select></label>`;
+$('#fb').innerHTML=`<div class="grid"><label>Von<input type="date" data-f="from"></label><label>Bis<input type="date" data-f="to"></label></div>`+sel('lake','Gewässer',LAKES)+sel('species','Fischart',SPECIES)+sel('kind','Art',[['caught','Nur erfolgreiche Fänge'],['contact','Nur Kontakte (ohne Fang)']])+sel('method','Angelmethode',METHODS)+`<label>Ködertyp (enthält)<input data-f="bait"></label>`;
+$('#fb').oninput=e=>{if(e.target.dataset.f){F[e.target.dataset.f]=e.target.value;render()}};
+$('#flt').onclick=()=>$('#filt').showModal();$('#fok').onclick=()=>$('#filt').close();
+$('#fr').onclick=()=>{Object.keys(F).forEach(k=>F[k]='');document.querySelectorAll('[data-f]').forEach(e=>e.value='');render()};
+const filtered=()=>entries.filter(e=>(!F.from||e.date>=F.from)&&(!F.to||e.date<=F.to)&&(!F.lake||e.lake===F.lake)&&(!F.species||e.species===F.species)&&(!F.kind||(F.kind==='caught'?e.result==='caught':e.result!=='caught'))&&(!F.method||e.method===F.method)&&(!F.bait||(e.bait||'').toLowerCase().includes(F.bait.toLowerCase())));
+const active=()=>Object.values(F).some(Boolean);
+
+/* ---------- Rendering ---------- */
+function render(){
+ const fe=filtered();$('#flt').textContent=active()?`Filter aktiv (${fe.length}/${entries.length})`:'Filter ▾';
+ cluster.clearLayers();markers=new Map();
+ fe.forEach(e=>{const m=L.marker([e.lat,e.lng],{icon:icon(e.result,e.id===hlId)}).bindPopup(()=>popup(e));markers.set(e.id,m);cluster.addLayer(m)});
+ $('#list').innerHTML=(fe.length?'':'<p class="mu">Noch keine Einträge (oder durch Filter ausgeblendet). Tippe auf die Karte, um den ersten Fischkontakt anzulegen.</p>')+sorted(fe).map(e=>`<div class="it" data-id="${e.id}"><div class="pin" style="background:${col(e.result)}"></div><div><b>${de(e.date)} ${esc(e.time)}</b> · ${esc(RES[e.result]?.[0]||'–')}<br><small>${esc(e.lake||'')} ${e.species?'· '+esc(e.species)+(e.guess?' (?)':''):''} ${e.bait?'· '+esc(e.bait):''}</small></div></div>`).join('');
+ $('#cnt').textContent=`${entries.length} Einträge gespeichert.`;
+ if($('#v-stats').classList.contains('on'))stats(fe);
+}
+$('#list').onclick=ev=>{const it=ev.target.closest('.it');if(!it)return;const id=it.dataset.id,e=entries.find(x=>x.id===id);hlId=id;show('map');render();map.setView([e.lat,e.lng],Math.max(map.getZoom(),18));const m=markers.get(id);cluster.zoomToShowLayer(m,()=>m.openPopup())};
+
+/* ---------- Statistik ---------- */
+const tally=(a,f)=>a.reduce((o,e)=>{const k=f(e);if(k)o[k]=(o[k]||0)+1;return o},{});
+const bars=(t,o,n=12)=>{const r=Object.entries(o).sort((a,b)=>b[1]-a[1]).slice(0,n),mx=Math.max(1,...r.map(x=>x[1]));return`<h3>${t}</h3>`+(r.length?r.map(([k,v])=>`<div class="bar"><span title="${esc(k)}">${esc(k)}</span><b style="width:${v/mx*55}%"></b><span>${v}</span></div>`).join(''):'<p class="mu">Keine Daten.</p>')};
+function stats(fe=filtered()){
+ const con=fe.filter(e=>e.result!=='seen'),caught=con.filter(e=>e.result==='caught'),lost=con.filter(e=>e.result==='lost_hooked'||e.result==='lost_drill'),bites=con.filter(e=>e.result==='bite');
+ const bt=(e)=>(e.bait||'').trim().toLowerCase();
+ const baitRows=Object.fromEntries(Object.entries(tally(con,e=>bt(e))).map(([k,v])=>[`${k}  (${caught.filter(e=>bt(e)===k).length} Fänge)`,v]));
+ const mRows=Object.fromEntries(Object.entries(tally(con,e=>e.method)).map(([k,v])=>[`${k}  (${caught.filter(e=>e.method===k).length} Fänge)`,v]));
+ const hb=tally(con,e=>e.time?String(Math.floor(+e.time.slice(0,2)/3)*3).padStart(2,'0')+'–'+String(Math.floor(+e.time.slice(0,2)/3)*3+3).padStart(2,'0')+' Uhr':'');
+ const mo=tally(con,e=>e.date?['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'][+e.date.slice(5,7)-1]:'');
+ const lk=Object.fromEntries(LAKES.map(l=>[`${l}  (${caught.filter(e=>e.lake===l).length} Fänge)`,con.filter(e=>e.lake===l).length]));
+ $('#stats').innerHTML=`<div class="kp"><div><b>${con.length}</b>Fischkontakte</div><div><b>${caught.length}</b>Gefangen</div><div><b>${lost.length}</b>Verloren</div><div><b>${bites.length}</b>Nur Biss</div><div><b>${fe.length-con.length}</b>Sichtungen</div></div>
+ <p class="mu">„Kontakte“ umfasst Bisse, verlorene und gefangene Fische (ohne Sichtungen). Fänge sind eine Teilmenge davon.${active()?' Aktive Filter wirken auch hier.':''}</p>
+ ${con.length<30?`<div class="warn">Bisher nur ${con.length} Kontakte: Unterschiede zwischen Ködern, Zeiten oder Gewässern sind bei so wenigen Daten Zufall und keine belastbaren Aussagen.</div>`:''}
+ ${bars('Fischarten (alle Einträge, auch Vermutungen)',tally(fe,e=>e.species))}${bars('Köder (Kontakte)',baitRows)}${bars('Angelmethoden (Kontakte)',mRows)}${bars('Tageszeit (Kontakte)',hb)}${bars('Monate (Kontakte)',mo)}${bars('Gewässer-Vergleich (Kontakte)',lk)}
+ <p class="mu">Heatmap/räumliche Auswertung ist in dieser Version nicht enthalten – die Cluster auf der Karte zeigen Häufungen.</p>`}
+
+/* ---------- Navigation ---------- */
+function show(v){document.querySelectorAll('section').forEach(s=>s.classList.toggle('on',s.id==='v-'+v));document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));if(v==='map')setTimeout(()=>map.invalidateSize(),50);if(v==='stats')stats()}
+$('#nav').onclick=e=>{if(e.target.dataset.v)show(e.target.dataset.v)};
+
+/* ---------- Export / Import ---------- */
+const dl=(name,txt,type)=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)};
+const stamp=()=>now().date;
+const exportJSON=()=>dl(`angelkarte-${stamp()}.json`,JSON.stringify({app:'angelkarte',version:1,exported:new Date().toISOString(),entries},null,1),'application/json');
+$('#exJ').onclick=exportJSON;
+$('#exC').onclick=()=>{const keys=['id','date','time','lake','lat','lng','result',...FIELDS.flatMap(s=>s[2].map(f=>f[0])).filter(k=>!['date','time','lake','result'].includes(k))];
+ const q=v=>{v=v==null?'':String(v);return/[;"\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
+ dl(`angelkarte-${stamp()}.csv`,'\ufeff'+[keys.join(';'),...sorted(entries).map(e=>keys.map(k=>q(e[k])).join(';'))].join('\n'),'text/csv')};
+$('#imp').onchange=async ev=>{const f=ev.target.files[0];if(!f)return;
+ try{const j=JSON.parse(await f.text()),a=Array.isArray(j)?j:j.entries;if(!Array.isArray(a))throw Error('Keine Einträge gefunden');
+  const ok=a.filter(e=>e&&e.id&&typeof e.lat==='number'&&typeof e.lng==='number');
+  if(!ok.length||!confirm(`${ok.length} gültige Einträge importieren (${a.length-ok.length} übersprungen)?`))return;
+  for(const e of ok)await put(e);await reload();toast(ok.length+' Einträge importiert.')}catch(e){alert('Import fehlgeschlagen: '+e.message)}
+ ev.target.value=''};
+$('#wipe').onclick=async()=>{if(!entries.length)return alert('Keine Einträge vorhanden.');
+ if(confirm('Zuerst alle Daten als JSON sichern?\nOK = Sicherung herunterladen, Abbrechen = ohne Sicherung weiter'))exportJSON();
+ if(!confirm(`Wirklich ALLE ${entries.length} Einträge endgültig löschen?`))return;
+ await dbx('entries','readwrite',s=>s.clear());await reload()};
+$('#relake').onclick=()=>loadLakes(true);
+
+(async()=>{try{await open();await reload();await loadLakes()}catch(e){toast('Fehler: '+e.message);alert('Speicher (IndexedDB) nicht verfügbar: '+e.message+'\nPrivater Modus?')}})();
+</script></body></html>
