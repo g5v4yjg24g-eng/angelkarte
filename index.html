@@ -53,7 +53,7 @@ summary{padding:10px 0;cursor:pointer}
 .warn{background:var(--warn);border-radius:8px;padding:8px 10px;font-size:13px;margin:8px 0}
 h3{margin:18px 0 6px}small,.mu{color:var(--mu)}
 </style></head><body>
-<nav id="nav"><button data-v="map" class="on">Karte</button><button data-v="list">Liste</button><button data-v="stats">Statistik</button><button data-v="data">Daten</button><button id="theme" style="flex:0 0 52px" title="Hell/Dunkel">◐</button></nav>
+<nav id="nav"><button data-v="map" class="on">Karte</button><button data-v="list">Liste</button><button data-v="stats">Statistik</button><button data-v="law">Fischereirecht NRW</button><button data-v="data">Daten</button><button id="theme" style="flex:0 0 52px" title="Hell/Dunkel">◐</button></nav>
 
 <section id="v-map" class="on"><div id="map"></div>
 <div id="legend"></div><button class="fab" id="flt">Filter ▾</button>
@@ -64,6 +64,7 @@ h3{margin:18px 0 6px}small,.mu{color:var(--mu)}
 
 <section id="v-list"><div class="scroll" id="list"></div></section>
 <section id="v-stats"><div class="scroll" id="stats"></div></section>
+<section id="v-law"><div class="scroll" id="law"></div></section>
 <section id="v-data"><div class="scroll">
 <h3>Datensicherung</h3>
 <p class="mu">Alle Daten liegen nur in diesem Browser (IndexedDB) auf diesem Gerät. Sichere sie regelmäßig als JSON (Fotos machen die Datei größer).</p>
@@ -263,12 +264,20 @@ $('#exJ').onclick=exportJSON;
 $('#exC').onclick=()=>{const keys=['id','date','time','lake','lat','lng','result',...FIELDS.flatMap(s=>s[2].map(f=>f[0])).filter(k=>!['date','time','lake','result'].includes(k))];
  const q=v=>{v=v==null?'':String(v);return/[;"\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
  dl(`angelkarte-${stamp()}.csv`,'\ufeff'+[keys.join(';'),...sorted(entries).map(e=>keys.map(k=>q(e[k])).join(';'))].join('\n'),'text/csv')};
-$('#imp').onchange=async ev=>{const f=ev.target.files[0];if(!f)return;
- try{const j=JSON.parse(await f.text()),a=Array.isArray(j)?j:j.entries;if(!Array.isArray(a))throw Error('Keine Einträge gefunden');
-  const ok=a.filter(e=>e&&e.id&&typeof e.lat==='number'&&typeof e.lng==='number');
-  if(!ok.length||!confirm(`${ok.length} gültige Einträge importieren (${a.length-ok.length} übersprungen)?`))return;
-  for(const e of ok)await put(e);for(const x of(j.sessions||[]))if(x&&x.id&&x.start&&x.end)await dbx('sessions','readwrite',st=>st.put(x));await reload();toast(ok.length+' Einträge importiert.')}catch(e){alert('Import fehlgeschlagen: '+e.message)}
- ev.target.value=''};
+$('#imp').onchange=async ev=>{const f=ev.target.files[0];ev.target.value='';if(!f)return;
+ const msg=e=>e&&e.name&&e.message?e.name+': '+e.message:String(e&&e.message||e||'unbekannter Fehler');
+ try{
+  const j=JSON.parse((await f.text()).replace(/^\uFEFF/,'')),a=Array.isArray(j)?j:j.entries;
+  if(!Array.isArray(a))throw Error('In der Datei wurden keine Einträge gefunden (Feld „entries“ fehlt). Ist es eine Angelkarte-Sicherung?');
+  const ok=a.filter(e=>e&&typeof e==='object'&&e.lat!=null&&e.lat!==''&&e.lng!=null&&e.lng!=='').map(e=>({...e,id:e.id||crypto.randomUUID(),lat:Number(e.lat),lng:Number(e.lng)})).filter(e=>isFinite(e.lat)&&isFinite(e.lng));
+  if(!ok.length)throw Error('Keine gültigen Einträge mit Koordinaten gefunden ('+a.length+' Einträge in der Datei).');
+  if(!confirm(`${ok.length} gültige Einträge importieren (${a.length-ok.length} übersprungen)?\nVorhandene Einträge mit gleicher ID werden überschrieben.`))return;
+  let n=0,bad=0,first='';
+  for(const e of ok){try{await put(e);n++}catch(er){bad++;first=first||msg(er)}}
+  for(const x of(Array.isArray(j.sessions)?j.sessions:[]))if(x&&x.id&&x.start&&x.end){try{await dbx('sessions','readwrite',st=>st.put(x))}catch(er){first=first||msg(er)}}
+  await reload();
+  if(bad)alert(`${n} importiert, ${bad} fehlgeschlagen.\nErster Fehler: ${first}`);else toast(n+' Einträge importiert.');
+ }catch(e){alert('Import fehlgeschlagen: '+msg(e))}};
 $('#wipe').onclick=async()=>{if(!entries.length)return alert('Keine Einträge vorhanden.');
  if(confirm('Zuerst alle Daten als JSON sichern?\nOK = Sicherung herunterladen, Abbrechen = ohne Sicherung weiter'))exportJSON();
  if(!confirm(`Wirklich ALLE ${entries.length} Einträge endgültig löschen?`))return;
@@ -339,4 +348,5 @@ window.moveE=id=>{const m=markers.get(id),e=entries.find(x=>x.id===id);if(!m||!e
 /* ---------- Hell/Dunkel ---------- */
 try{document.documentElement.dataset.theme=localStorage.getItem('theme')||''}catch(e){}
 $('#theme').onclick=()=>{const t=document.documentElement.dataset.theme==='light'?'':'light';document.documentElement.dataset.theme=t;try{localStorage.setItem('theme',t)}catch(e){}};
-</script></body></html>
+</script>
+<script src="recht.js"></script></body></html>
