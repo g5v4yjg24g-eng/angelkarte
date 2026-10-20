@@ -53,7 +53,7 @@ summary{padding:10px 0;cursor:pointer}
 .warn{background:var(--warn);border-radius:8px;padding:8px 10px;font-size:13px;margin:8px 0}
 h3{margin:18px 0 6px}small,.mu{color:var(--mu)}
 </style></head><body>
-<nav id="nav"><button data-v="map" class="on">Karte</button><button data-v="list">Liste</button><button data-v="stats">Statistik</button><button data-v="law">Fischereirecht NRW</button><button data-v="data">Daten</button><button id="theme" style="flex:0 0 52px" title="Hell/Dunkel">◐</button></nav>
+<nav id="nav"><button data-v="map" class="on">Karte</button><button data-v="list">Liste</button><button data-v="stats">Statistik</button><button data-v="cal">Angelkalender</button><button data-v="law">Fischereirecht NRW</button><button data-v="data">Daten</button><button id="theme" style="flex:0 0 52px" title="Hell/Dunkel">◐</button></nav>
 
 <section id="v-map" class="on"><div id="map"></div>
 <div id="legend"></div><button class="fab" id="flt">Filter ▾</button>
@@ -64,6 +64,7 @@ h3{margin:18px 0 6px}small,.mu{color:var(--mu)}
 
 <section id="v-list"><div class="scroll" id="list"></div></section>
 <section id="v-stats"><div class="scroll" id="stats"></div></section>
+<section id="v-cal"><div class="scroll" id="cal"></div></section>
 <section id="v-law"><div class="scroll" id="law"></div></section>
 <section id="v-data"><div class="scroll">
 <h3>Datensicherung</h3>
@@ -99,12 +100,12 @@ const FIELDS=[
 const NUMS=new Set(FIELDS.flatMap(s=>s[2]).filter(f=>f[2]==='number').map(f=>f[0]));
 
 /* ---------- IndexedDB ---------- */
-let db,entries=[],sessions=[],curSess=null;
-const open=()=>new Promise((ok,no)=>{const r=indexedDB.open('angelkarte',2);r.onupgradeneeded=()=>{const d=r.result;if(!d.objectStoreNames.contains('entries'))d.createObjectStore('entries',{keyPath:'id'});if(!d.objectStoreNames.contains('meta'))d.createObjectStore('meta');if(!d.objectStoreNames.contains('sessions'))d.createObjectStore('sessions',{keyPath:'id'})};r.onsuccess=()=>{db=r.result;ok()};r.onerror=()=>no(r.error)});
+let db,entries=[],sessions=[],plans=[],curSess=null;
+const open=()=>new Promise((ok,no)=>{const r=indexedDB.open('angelkarte',3);r.onupgradeneeded=()=>{const d=r.result;if(!d.objectStoreNames.contains('entries'))d.createObjectStore('entries',{keyPath:'id'});if(!d.objectStoreNames.contains('meta'))d.createObjectStore('meta');if(!d.objectStoreNames.contains('sessions'))d.createObjectStore('sessions',{keyPath:'id'});if(!d.objectStoreNames.contains('plans'))d.createObjectStore('plans',{keyPath:'id'})};r.onsuccess=()=>{db=r.result;ok()};r.onerror=()=>no(r.error)});
 const dbx=(st,mode,fn)=>new Promise((ok,no)=>{const t=db.transaction(st,mode),r=fn(t.objectStore(st));t.oncomplete=()=>ok(r&&r.result);t.onerror=()=>no(t.error);t.onabort=()=>no(t.error)});
 const put=e=>dbx('entries','readwrite',s=>s.put(e));
 const del=id=>dbx('entries','readwrite',s=>s.delete(id));
-async function reload(){entries=await dbx('entries','readonly',s=>s.getAll());sessions=await dbx('sessions','readonly',s=>s.getAll());render();checkBackup()}
+async function reload(){entries=await dbx('entries','readonly',s=>s.getAll());sessions=await dbx('sessions','readonly',s=>s.getAll());plans=await dbx('plans','readonly',s=>s.getAll());render();checkBackup();if(window.calRefresh)window.calRefresh()}
 
 /* ---------- Hilfen ---------- */
 const de=d=>d?d.split('-').reverse().join('.'):'';
@@ -195,7 +196,7 @@ $('#ph').onchange=e=>{const f=e.target.files[0];if(!f)return;const im=new Image(
 $('#phx').onclick=()=>{curPhoto='';phShow()};
 let cur=null;
 function openForm(e){
- const isNew=!e.id;cur=isNew?{id:crypto.randomUUID(),lat:e.lat,lng:e.lng,created:Date.now(),...now(),lake:detectLake(e.lat,e.lng),sessionId:curSess?.id}:{...e};curPhoto=cur.photo||'';phShow();$('#wxs').textContent='';
+ const isNew=!e.id;cur=isNew?{id:crypto.randomUUID(),lat:e.lat,lng:e.lng,created:Date.now(),...now(),lake:detectLake(e.lat,e.lng)||curSess?.lake||'',sessionId:curSess?.id,...(curSess?.pre||{})}:{...e};curPhoto=cur.photo||'';phShow();$('#wxs').textContent='';
  const f=$('#fm');for(const el of f.elements){if(!el.name)continue;const v=cur[el.name];if(el.type==='checkbox')el.checked=!!v;else el.value=v??''}
  $('#ft').textContent=isNew?'Neuer Fischkontakt':'Eintrag bearbeiten';
  $('#fc').textContent=`${cur.lat.toFixed(6)}, ${cur.lng.toFixed(6)}`;
@@ -259,7 +260,7 @@ $('#nav').onclick=e=>{if(e.target.dataset.v)show(e.target.dataset.v)};
 /* ---------- Export / Import ---------- */
 const dl=(name,txt,type)=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)};
 const stamp=()=>now().date;
-const exportJSON=async()=>{dl(`angelkarte-${stamp()}.json`,JSON.stringify({app:'angelkarte',version:1,exported:new Date().toISOString(),entries,sessions},null,1),'application/json');await dbx('meta','readwrite',s=>s.put(Date.now(),'lastBackup'));checkBackup()};
+const exportJSON=async()=>{dl(`angelkarte-${stamp()}.json`,JSON.stringify({app:'angelkarte',version:2,exported:new Date().toISOString(),entries,sessions,plans},null,1),'application/json');await dbx('meta','readwrite',s=>s.put(Date.now(),'lastBackup'));checkBackup()};
 $('#exJ').onclick=exportJSON;
 $('#exC').onclick=()=>{const keys=['id','date','time','lake','lat','lng','result',...FIELDS.flatMap(s=>s[2].map(f=>f[0])).filter(k=>!['date','time','lake','result'].includes(k))];
  const q=v=>{v=v==null?'':String(v);return/[;"\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
@@ -275,13 +276,14 @@ $('#imp').onchange=async ev=>{const f=ev.target.files[0];ev.target.value='';if(!
   let n=0,bad=0,first='';
   for(const e of ok){try{await put(e);n++}catch(er){bad++;first=first||msg(er)}}
   for(const x of(Array.isArray(j.sessions)?j.sessions:[]))if(x&&x.id&&x.start&&x.end){try{await dbx('sessions','readwrite',st=>st.put(x))}catch(er){first=first||msg(er)}}
+  for(const x of(Array.isArray(j.plans)?j.plans:[])){const pl=window.AngelCal&&AngelCal.cleanPlan(x);if(!pl||plans.some(q=>q.id!==pl.id&&q.date===pl.date&&q.start===pl.start&&q.title===pl.title&&q.lake===pl.lake))continue;try{await dbx('plans','readwrite',st=>st.put(pl))}catch(er){first=first||msg(er)}}
   await reload();
   if(bad)alert(`${n} importiert, ${bad} fehlgeschlagen.\nErster Fehler: ${first}`);else toast(n+' Einträge importiert.');
  }catch(e){alert('Import fehlgeschlagen: '+msg(e))}};
 $('#wipe').onclick=async()=>{if(!entries.length)return alert('Keine Einträge vorhanden.');
  if(confirm('Zuerst alle Daten als JSON sichern?\nOK = Sicherung herunterladen, Abbrechen = ohne Sicherung weiter'))exportJSON();
- if(!confirm(`Wirklich ALLE ${entries.length} Einträge endgültig löschen?`))return;
- await dbx('entries','readwrite',s=>s.clear());await dbx('sessions','readwrite',s=>s.clear());await reload()};
+ if(!confirm(`Wirklich ALLE ${entries.length} Einträge (inkl. Ausflüge und geplanter Termine) endgültig löschen?`))return;
+ await dbx('entries','readwrite',s=>s.clear());await dbx('sessions','readwrite',s=>s.clear());await dbx('plans','readwrite',s=>s.clear());await reload()};
 $('#relake').onclick=()=>loadLakes(true);
 
 (async()=>{try{await open();favs=(await dbx('meta','readonly',s=>s.get('favs')))||[];favUI();curSess=(await dbx('meta','readonly',s=>s.get('active')))||null;sessUI();await reload();await loadLakes()}catch(e){toast('Fehler: '+e.message);alert('Speicher (IndexedDB) nicht verfügbar: '+e.message+'\nPrivater Modus?')}})();
@@ -290,7 +292,7 @@ $('#relake').onclick=()=>loadLakes(true);
 let qBusy=false;
 function quick(result){
  if(qBusy)return;qBusy=true;
- const go=async(lat,lng,acc)=>{try{const e={id:crypto.randomUUID(),created:Date.now(),...now(),lat,lng,result,lake:detectLake(lat,lng),sessionId:curSess?.id};
+ const go=async(lat,lng,acc)=>{try{const e={id:crypto.randomUUID(),created:Date.now(),...now(),lat,lng,result,lake:detectLake(lat,lng)||curSess?.lake||'',sessionId:curSess?.id,...(curSess?.pre||{})};
   await put(e);weatherFor(lat,lng,e.date,e.time).then(w=>{Object.assign(entries.find(x=>x.id===e.id)||{},w);return put({...e,...w})}).catch(()=>{});await reload();map.setView([lat,lng],Math.max(map.getZoom(),17));
   toast(`${RES[result][0]} gespeichert${acc?` (GPS ±${Math.round(acc)} m)`:''} – Marker antippen zum Ergänzen`);
   const m=markers.get(e.id);if(m)cluster.zoomToShowLayer(m,()=>m.openPopup())}catch(er){alert('Speichern fehlgeschlagen: '+er.message)}qBusy=false};
@@ -349,4 +351,5 @@ window.moveE=id=>{const m=markers.get(id),e=entries.find(x=>x.id===id);if(!m||!e
 try{document.documentElement.dataset.theme=localStorage.getItem('theme')||''}catch(e){}
 $('#theme').onclick=()=>{const t=document.documentElement.dataset.theme==='light'?'':'light';document.documentElement.dataset.theme=t;try{localStorage.setItem('theme',t)}catch(e){}};
 </script>
-<script src="recht.js"></script></body></html>
+<script src="recht.js"></script>
+<script src="calendar.js"></script></body></html>
