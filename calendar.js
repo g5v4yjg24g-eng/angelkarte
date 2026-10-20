@@ -164,7 +164,7 @@ function yearHtml(){const now=Date.now();const ys=new Set([todayB().slice(0,4)])
 document.addEventListener('change',e=>{if(e.target.id==='sy'){sy=e.target.value;rcal()}if(e.target.id==='sl'){sl=e.target.value;rcal()}});
 /* ---------- Dialoge ---------- */
 const dlg=id=>{let d=$('#'+id);if(!d){d=document.createElement('dialog');d.id=id;document.body.appendChild(d)}return d};
-function openPlan(id){const p=plans.find(x=>x.id===id);if(!p)return;const st=pState(p),d=dlg('cdlg'),ov=pEnd(p)>berlinMs(p.date,p.start)&&bDay(pEnd(p)-1)>p.date;
+function openPlan(id){const p=plans.find(x=>x.id===id);if(!p)return;const d=dlg('cdlg'),$=s=>d.querySelector(s),st=pState(p),ov=pEnd(p)>berlinMs(p.date,p.start)&&bDay(pEnd(p)-1)>p.date;
  const act=st==='cancelled'?[['reopen','Wieder aktivieren','p']]:st==='done'?[['reopen','Wieder öffnen',''],['edit','Bearbeiten','']]:[['start','▶ Session starten','p'],['edit','Bearbeiten',''],['move','Verschieben',''],['done','Als erledigt markieren',''],['cancel','Absagen','']];
  d.innerHTML=`<b>${esc(p.title||'Angeltermin')}</b> <span class="bd ${{planned:'ye',open:'mu',done:'ok',cancelled:'mu'}[st]}" style="margin-left:6px;padding:1px 8px;border-radius:10px;font-size:12px;background:#cbd5e1;color:#111">${{planned:'geplant',open:'vergangen, offen',done:'erledigt',cancelled:'abgesagt'}[st]}</span>
 <div style="font-size:14px;line-height:1.5;margin-top:8px">📅 ${WD[dow(p.date)]} ${fd(p.date)}, ${p.start}–${p.end} Uhr${ov?' (endet am Folgetag)':''}<br>📍 ${esc(planLake(p)||'–')}${p.target?'<br>🎯 Ziel: '+esc(p.target):''}${p.method?'<br>Methode: '+esc(p.method):''}${p.bait?'<br>Köder: '+esc(p.bait):''}${p.notes?'<br><i>'+esc(p.notes)+'</i>':''}
@@ -184,7 +184,7 @@ ${p.remind?'<div class="note">'+remInfo(p)+'</div>':''}<div id="wxo">${wxHtml(p)
   if(a==='del'){if(!confirm('Diesen Termin endgültig löschen?'))return;await removePlan(p.id);d.close()}
  }catch(er){err(er.message)}};
  d.showModal()}
-function openSess(id){const act=curSess&&curSess.id===id,x=act?curSess:sessions.find(s=>s.id===id);if(!x)return;const d=dlg('cdlg'),en=entries.filter(e=>e.sessionId===id).sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time)),con=en.filter(e=>e.result!=='seen'),ca=en.filter(e=>e.result==='caught'),e2=act?Date.now():x.end,pl=x.planId&&plans.find(p=>p.id===x.planId);
+function openSess(id){const act=curSess&&curSess.id===id,x=act?curSess:sessions.find(s=>s.id===id);if(!x)return;const d=dlg('cdlg'),$=s=>d.querySelector(s),en=entries.filter(e=>e.sessionId===id).sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time)),con=en.filter(e=>e.result!=='seen'),ca=en.filter(e=>e.result==='caught'),e2=act?Date.now():x.end,pl=x.planId&&plans.find(p=>p.id===x.planId);
  d.innerHTML=`<b>${esc(x.planTitle||'Session')}</b> <span class="bd" style="margin-left:6px;padding:1px 8px;border-radius:10px;font-size:12px;background:${act?'#fbbf24':'#86efac'};color:#111">${act?'läuft':'abgeschlossen'}</span>
 <div style="font-size:14px;line-height:1.5;margin-top:8px">📅 ${fd(bDay(x.start))} ${bTime(x.start)}${act?' – läuft':' – '+(bDay(e2)>bDay(x.start)?fd(bDay(e2))+' ':'')+bTime(e2)} Uhr · ${fmtDur(e2-x.start)}<br>📍 ${esc(sLake(x)||'Gewässer nicht erkennbar')}${pl?'<br>Geplant als: '+esc(pl.title||'Termin')+' ('+fd(pl.date)+')':''}<br><b>${con.length}</b> Fischkontakte, <b>${ca.length}</b> Fänge</div>
 <label>Notiz zur Session<textarea id="sn" rows="3">${esc(x.note||'')}</textarea></label>
@@ -194,7 +194,7 @@ function openSess(id){const act=curSess&&curSess.id===id,x=act?curSess:sessions.
  $('#sn').onchange=async()=>{x.note=$('#sn').value;if(act)await dbx('meta','readwrite',s=>s.put(curSess,'active'));else await dbx('sessions','readwrite',s=>s.put(x));toast('Notiz gespeichert.')};
  $('#sel').onclick=ev=>{const c=ev.target.closest('[data-e]');if(!c)return;const e=entries.find(z=>z.id===c.dataset.e);d.close();hlId=e.id;show('map');render();map.setView([e.lat,e.lng],Math.max(map.getZoom(),18));const m=markers.get(e.id);if(m)cluster.zoomToShowLayer(m,()=>m.openPopup())};
  d.showModal()}
-function openForm(p,mode,date){const d=dlg('pdlg'),nw=!p,mv=mode==='move',all=plans.slice().sort((a,b)=>b.created-a.created)[0]||{},td=todayB();
+function openForm(p,mode,date){const d=dlg('pdlg'),$=s=>d.querySelector(s),nw=!p,mv=mode==='move',all=plans.slice().sort((a,b)=>b.created-a.created)[0]||{},td=todayB();
  const o=nw?(()=>{let s='06:00';if(date===td){const h=(tzp(Date.now()).hour+1)%24;s=p2(h)+':00'}return{date,start:s,end:p2((+s.slice(0,2)+3)%24)+':00',lake:all.lake||LAKES[0],place:all.place||'',target:all.target||'',method:all.method||'',bait:all.bait||'',notes:'',remind:'',remindAt:'',title:''}})():{...p};
  const op=(a,v)=>a.map(x=>`<option${x===v?' selected':''}>${esc(x)}</option>`).join('');
  const dis=mv?' style="display:none"':'';
@@ -205,9 +205,9 @@ function openForm(p,mode,date){const d=dlg('pdlg'),nw=!p,mv=mode==='move',all=pl
 <div class="grid"><label>Zielfisch<select id="f-target"><option value="">–</option>${op(SPECIES,o.target)}</select></label><label>Methode<select id="f-method"><option value="">–</option>${op(METHODS,o.method)}</select></label></div>
 <label>Geplante Köder<input id="f-bait" value="${esc(o.bait)}"></label><label>Notizen<textarea id="f-notes" rows="2">${esc(o.notes)}</textarea></label>
 <label>Erinnerung<select id="f-rem">${Object.entries(RLAB).map(([k,v])=>`<option value="${k}"${k===o.remind?' selected':''}>${v==='keine'?'Keine':v}</option>`).join('')}</select></label><label id="f-ra" style="display:${o.remind==='custom'?'block':'none'}">Erinnerungszeitpunkt<input type="datetime-local" id="f-remat" value="${esc(o.remindAt)}"></label></div>
-<p class="mu" id="ferr" style="color:#f87171"></p><div class="row"><button class="btn" id="fx">Abbrechen</button><button class="btn p" id="fs">Speichern</button></div>`;
- $('#f-lake').onchange=e=>$('#f-pl').style.display=e.target.value==='other'?'block':'none';$('#f-rem').onchange=e=>$('#f-ra').style.display=e.target.value==='custom'?'block':'none';$('#fx').onclick=()=>d.close();
- $('#fs').onclick=async()=>{const v=k=>$('#f-'+k).value,n={...o,date:v('date'),start:v('start'),end:v('end')};
+<p class="mu" id="ferr" style="color:#f87171"></p><div class="row"><button class="btn" id="pfx">Abbrechen</button><button class="btn p" id="pfs">Speichern</button></div>`;
+ $('#f-lake').onchange=e=>$('#f-pl').style.display=e.target.value==='other'?'block':'none';$('#f-rem').onchange=e=>$('#f-ra').style.display=e.target.value==='custom'?'block':'none';$('#pfx').onclick=()=>d.close();
+ $('#pfs').onclick=async()=>{const v=k=>$('#f-'+k).value,n={...o,date:v('date'),start:v('start'),end:v('end')};
   if(!mv)Object.assign(n,{title:v('title').trim(),lake:v('lake'),place:v('lake')==='other'?v('place').trim():'',target:v('target'),method:v('method'),bait:v('bait').trim(),notes:v('notes').trim(),remind:v('rem'),remindAt:v('rem')==='custom'?v('remat'):''});
   const er=validate(n);if(er){$('#ferr').textContent=er;return}
   if(!n.title)n.title='Angeln – '+(planLake(n)||'Termin');
