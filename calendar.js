@@ -86,7 +86,7 @@ async function movePlan(p,date,start,end){const e=validate({...p,date,start,end}
 async function startSess(p){
  if(curSess)throw Error('Es läuft bereits eine Session. Beende sie zuerst.');
  curSess={id:crypto.randomUUID(),start:Date.now(),planId:p.id,planTitle:p.title||'Angeltermin',lake:LAKES.includes(p.lake)?p.lake:'',pre:{...(p.method?{method:p.method}:{}),...(p.bait?{bait:p.bait}:{})}};
- await dbx('meta','readwrite',s=>s.put(curSess,'active'));p.sessionId=curSess.id;p.status='started';await savePlan(p);if(typeof sessUI==='function')sessUI()}
+ await dbx('meta','readwrite',s=>s.put(curSess,'active'));p.sessionId=curSess.id;p.status='started';await savePlan(p);if(typeof sessUI==='function')sessUI();if(window.WX)WX.onSessionStart()}
 /* ---------- Wetter (optional, Open-Meteo) ---------- */
 function coords(p){const L=typeof lakes!=='undefined'?lakes:[];let rs=[];L.forEach(l=>{if(p.lake&&p.lake!=='other'&&l.key===p.lake)rs.push(...l.rings)});if(!rs.length&&p.lake!=='other')L.forEach(l=>rs.push(...l.rings));
  if(rs.length){let a=0,b=0,n=0;rs.forEach(r=>r.forEach(([la,ln])=>{a+=la;b+=ln;n++}));return{lat:a/n,lng:b/n,src:'Gewässermitte laut OSM-Umriss'}}
@@ -186,6 +186,7 @@ ${p.remind?'<div class="note">'+remInfo(p)+'</div>':''}<div id="wxo">${wxHtml(p)
 function openSess(id){const act=curSess&&curSess.id===id,x=act?curSess:sessions.find(s=>s.id===id);if(!x)return;const d=dlg('cdlg'),$=s=>d.querySelector(s),en=entries.filter(e=>e.sessionId===id).sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time)),con=en.filter(e=>e.result!=='seen'),ca=en.filter(e=>e.result==='caught'),e2=act?Date.now():x.end,pl=x.planId&&plans.find(p=>p.id===x.planId);
  d.innerHTML=`<b>${esc(x.planTitle||'Session')}</b> <span class="bd" style="margin-left:6px;padding:1px 8px;border-radius:10px;font-size:12px;background:${act?'#fbbf24':'#86efac'};color:#111">${act?'läuft':'abgeschlossen'}</span>
 <div style="font-size:14px;line-height:1.5;margin-top:8px">📅 ${fd(bDay(x.start))} ${bTime(x.start)}${act?' – läuft':' – '+(bDay(e2)>bDay(x.start)?fd(bDay(e2))+' ':'')+bTime(e2)} Uhr · ${fmtDur(e2-x.start)}<br>📍 ${esc(sLake(x)||'Gewässer nicht erkennbar')}${pl?'<br>Geplant als: '+esc(pl.title||'Termin')+' ('+fd(pl.date)+')':''}<br><b>${con.length}</b> Fischkontakte, <b>${ca.length}</b> Fänge</div>
+${window.WX?WX.reviewHtml(x,en):''}
 <label>Notiz zur Session<textarea id="sn" rows="3">${esc(x.note||'')}</textarea></label>
 <div id="sel">${en.map(e=>`<div class="ci fn" data-e="${e.id}" style="margin:4px 0"><b>${esc(e.time)}</b> ${esc(RES[e.result]?.[0]||'–')}${e.species?' · '+esc(e.species):''}${e.bait?' · '+esc(e.bait):''}${e.notes?'<br><small>'+esc(e.notes.slice(0,80))+'</small>':''}</div>`).join('')||'<p class="mu">Noch keine Einträge in dieser Session.</p>'}</div>
 <div class="row"><button class="btn" id="sx">Schließen</button></div>`;
@@ -217,5 +218,5 @@ function openForm(p,mode,date){const d=dlg('pdlg'),$=s=>d.querySelector(s),nw=!p
 window.calRefresh=()=>{if(!booted&&typeof plans!=='undefined'){booted=true;checkRem(true)}rcal()};
 $('#nav').addEventListener('click',e=>{if(e.target.dataset.v==='cal'){cur=todayB();sel=null;rcal()}});
 setInterval(()=>checkRem(false),20000);
-window.AngelCal={berlinMs,bDay,bTime,addD,isoWeek,cleanPlan,pState,buildEvents,remindMs,legalFlag,legalHtml,validate,savePlan,removePlan,setStatus,movePlan,startSess,checkRem,onDay,pEnd,yearHtml,remInfo};
+window.AngelCal={berlinMs,bDay,bTime,addD,isoWeek,cleanPlan,pState,buildEvents,remindMs,legalFlag,legalHtml,validate,savePlan,removePlan,setStatus,movePlan,startSess,checkRem,onDay,pEnd,yearHtml,remInfo,openSess};
 })();
