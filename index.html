@@ -324,24 +324,8 @@ function render(){
 }
 $('#list').onclick=ev=>{const it=ev.target.closest('.it');if(!it)return;const id=it.dataset.id,e=entries.find(x=>x.id===id);hlId=id;show('map');render();map.setView([e.lat,e.lng],Math.max(map.getZoom(),18));const m=markers.get(id);cluster.zoomToShowLayer(m,()=>m.openPopup())};
 
-/* ---------- Statistik ---------- */
-const tally=(a,f)=>a.reduce((o,e)=>{const k=f(e);if(k)o[k]=(o[k]||0)+1;return o},{});
-const bars=(t,o,n=12)=>{const r=Object.entries(o).sort((a,b)=>b[1]-a[1]).slice(0,n),mx=Math.max(1,...r.map(x=>x[1]));return`<h3>${t}</h3>`+(r.length?r.map(([k,v])=>`<div class="bar"><span title="${esc(k)}">${esc(k)}</span><b style="width:${v/mx*55}%"></b><span>${v}</span></div>`).join(''):'<p class="mu">Keine Daten.</p>')};
-function stats(fe=filtered()){
- const con=fe.filter(e=>e.result!=='seen'),caught=con.filter(e=>e.result==='caught'),lost=con.filter(e=>e.result==='lost_hooked'||e.result==='lost_drill'),bites=con.filter(e=>e.result==='bite');
- const bt=(e)=>(e.bait||'').trim().toLowerCase();
- const baitRows=Object.fromEntries(Object.entries(tally(con,e=>bt(e))).map(([k,v])=>[`${k}  (${caught.filter(e=>bt(e)===k).length} Fänge)`,v]));
- const mRows=Object.fromEntries(Object.entries(tally(con,e=>e.method)).map(([k,v])=>[`${k}  (${caught.filter(e=>e.method===k).length} Fänge)`,v]));
- const hb=tally(con,e=>e.time?String(Math.floor(+e.time.slice(0,2)/3)*3).padStart(2,'0')+'–'+String(Math.floor(+e.time.slice(0,2)/3)*3+3).padStart(2,'0')+' Uhr':'');
- const mo=tally(con,e=>e.date?['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'][+e.date.slice(5,7)-1]:'');
- const lk=Object.fromEntries(LAKES.map(l=>[`${l}  (${caught.filter(e=>e.lake===l).length} Fänge)`,con.filter(e=>e.lake===l).length]));
- const ss=sessions.filter(x=>x.end).sort((a,b)=>b.start-a.start),hrs=ss.reduce((a,x)=>a+(x.end-x.start),0)/36e5,sc=x=>entries.filter(e=>e.sessionId===x.id&&e.result!=='seen'),scn=ss.reduce((a,x)=>a+sc(x).length,0),scc=ss.reduce((a,x)=>a+sc(x).filter(e=>e.result==='caught').length,0);
- const sessHtml=`${bars('Luftdruck-Trend (Kontakte)',tally(con,e=>e.pressTrend))}<h3>Ausflüge</h3>`+(ss.length?`<p>${ss.length} Ausflüge, ${fmtDur(hrs*36e5)} gesamt · ${(scn/hrs).toFixed(2).replace('.',',')} Kontakte/Std. · ${(scc/hrs).toFixed(2).replace('.',',')} Fänge/Std. · ${ss.filter(x=>!sc(x).length).length} ohne Kontakt</p>${ss.length<5?'<div class="warn">Erst '+ss.length+' Ausflüge – die Raten sind noch nicht aussagekräftig.</div>':''}`+ss.slice(0,10).map(x=>`<div class="bar"><span>${new Date(x.start).toLocaleDateString('de-DE')}</span><span style="width:auto">${fmtDur(x.end-x.start)} · ${sc(x).length} Kontakte · ${sc(x).filter(e=>e.result==='caught').length} Fänge</span></div>`).join(''):'<p class="mu">Noch keine beendeten Ausflüge. Starte einen mit „Ausflug starten“ auf der Karte.</p>');
- $('#stats').innerHTML=`<div class="kp"><div><b>${con.length}</b>Fischkontakte</div><div><b>${caught.length}</b>Gefangen</div><div><b>${lost.length}</b>Verloren</div><div><b>${bites.length}</b>Nur Biss</div><div><b>${fe.length-con.length}</b>Sichtungen</div></div>
- <p class="mu">„Kontakte“ umfasst Bisse, verlorene und gefangene Fische (ohne Sichtungen). Fänge sind eine Teilmenge davon.${active()?' Aktive Filter wirken auch hier.':''}</p>
- ${con.length<30?`<div class="warn">Bisher nur ${con.length} Kontakte: Unterschiede zwischen Ködern, Zeiten oder Gewässern sind bei so wenigen Daten Zufall und keine belastbaren Aussagen.</div>`:''}
- ${bars('Fischarten (alle Einträge, auch Vermutungen)',tally(fe,e=>e.species))}${bars('Köder (Kontakte)',baitRows)}${bars('Angelmethoden (Kontakte)',mRows)}${bars('Tageszeit (Kontakte)',hb)}${bars('Monate (Kontakte)',mo)}${bars('Gewässer-Vergleich (Kontakte)',lk)}
- ${sessHtml}<p class="mu">Räumliche Auswertung: Button „Heatmap“ auf der Karte.</p>`}
+/* ---------- Statistik (Dashboard in statistik.js) ---------- */
+function stats(){if(window.Stat)Stat.render()}
 
 /* ---------- Navigation ---------- */
 function show(v){document.querySelectorAll('section').forEach(s=>s.classList.toggle('on',s.id==='v-'+v));document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));if(v==='map')setTimeout(()=>map.invalidateSize(),50);if(v==='stats')stats();const sc=$('#v-'+v);if(sc)sc.scrollTop=0;const pn=$('#pageName');if(pn)pn.textContent=PAGES[v]||''}
@@ -455,4 +439,5 @@ document.addEventListener('focusin',e=>{if(e.target.closest&&e.target.closest('d
 </script>
 <script src="recht.js"></script>
 <script src="calendar.js"></script>
-<script src="wetter.js"></script></body></html>
+<script src="wetter.js"></script>
+<script src="statistik.js"></script></body></html>

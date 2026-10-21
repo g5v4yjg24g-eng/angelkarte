@@ -183,10 +183,10 @@ function pois(k,l,upper){let p=Math.exp(-l),c=p;for(let i=1;i<=k;i++){p*=l/i;c+=
 // Session in Stundenabschnitte zerlegen; jedem Abschnitt das Wetter zu seiner Mitte zuordnen
 function slices(x){const out=[],ser=x.wx?.series||[];for(let a=Math.floor(x.start/H)*H;a<x.end;a+=H){const s=Math.max(a,x.start),e=Math.min(a+H,x.end);if(e<=s)continue;const m=(s+e)/2;out.push({t:m,h:(e-s)/H,r:ser.length?recAt(ser,m):null})}return out}
 
-function filterSet(F){const now=Date.now(),from=F.per==='all'?0:F.per==='year'?Date.parse(new Date().getFullYear()+'-01-01'):now-(+F.per)*864e5;
+function filterSet(F){const now=Date.now(),from=F.from!=null?F.from:F.per==='all'?0:F.per==='year'?Date.parse(new Date().getFullYear()+'-01-01'):now-(+F.per)*864e5,to=F.to??Infinity; // from/to (ms) optional, z. B. aus dem Statistik-Reiter
  const okL=l=>F.lake==='all'||lakeKey(l)===F.lake&&!!l;
- const S=sessions.filter(x=>x.end&&x.start>=from&&(F.lake==='all'||sessLake(x)===F.lake));
- const E=entries.filter(e=>{const t=entryMs(e);return t&&t>=from&&(F.lake==='all'||okL(e.lake))&&(F.sp==='all'||e.species===F.sp)});
+ const S=sessions.filter(x=>x.end&&x.start>=from&&x.start<to&&(F.lake==='all'||sessLake(x)===F.lake));
+ const E=entries.filter(e=>{const t=entryMs(e);return t&&t>=from&&t<to&&(F.lake==='all'||okL(e.lake))&&(F.sp==='all'||e.species===F.sp)});
  return{S,E,ids:new Set(S.map(x=>x.id))}}
 function analyze(F){const{S,E,ids}=filterSet(F),con=E.filter(CON),inS=con.filter(e=>ids.has(e.sessionId)),hours=S.reduce((a,x)=>a+(x.end-x.start)/H,0);
  const sl=new Map(S.map(x=>[x.id,slices(x)])),R=hours?inS.length/hours:0,enough=S.length>=MIN_ALL_SESS&&inS.length>=MIN_ALL_CON;
@@ -390,6 +390,6 @@ function entryLine(e){return e.wx?`Wetter: ${wxLine(e.wx)}${e.wx.late?' (nachtrÃ
 function spOpts(){const el=$('#fSp');if(!el)return;const v=el.value,sp=[...new Set([...SPECIES.filter(s=>!/Andere|Unbekannt/.test(s)),...entries.map(e=>e.species).filter(Boolean)])];el.innerHTML=`<option value="all">Alle Fischarten</option>${sp.map(s=>`<option>${esc(s)}</option>`).join('')}`;el.value=sp.includes(v)?v:'all';F.sp=el.value}
 function renderAll(){build();spOpts();renderNow();renderSession();renderAnalysis()}
 function init(){if(!$('#wx'))return;$('#nav').addEventListener('click',e=>{if(e.target.dataset.v==='wx'){renderAll();refreshNow()}})}
-window.WX={LAKE,lakeKey,trendOf,sunTimes,lightOf,recAt,valAt,withTrend,summarize,slices,analyze,pois,getNow,ensureHours,attachEntry,finalize,backfill,onSessionStart,onSessionEnd,liveTick,reviewHtml,reviewText,entryLine,wxLine,_failed:()=>[...failed],_reset:()=>{hoursCache=null;nowCache=null;tried.clear();backoff=0;started=false}};
+window.WX={LAKE,lakeKey,sessLake,trendOf,sunTimes,lightOf,recAt,valAt,withTrend,summarize,slices,analyze,pois,getNow,ensureHours,attachEntry,finalize,backfill,onSessionStart,onSessionEnd,liveTick,reviewHtml,reviewText,entryLine,wxLine,_failed:()=>[...failed],_reset:()=>{hoursCache=null;nowCache=null;tried.clear();backoff=0;started=false}};
 init();
 })();
