@@ -1,6 +1,6 @@
-const APP='angelkarte-app-v6',TILES='angelkarte-tiles-v1',MAXTILES=3000;
+const APP='angelkarte-app-v7',TILES='angelkarte-tiles-v1',MAXTILES=3000;
 const CDN=['https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css','https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js','https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css','https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css','https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.js','https://cdnjs.cloudflare.com/ajax/libs/leaflet.heat/0.2.0/leaflet-heat.js'];
-const LOCAL=['./','index.html','recht.js','calendar.js','wetter.js','manifest.json','icon-192.png','icon-512.png'];
+const LOCAL=['./','index.html','recht.js','calendar.js','wetter.js','statistik.js','manifest.json','icon-192.png','icon-512.png'];
 self.addEventListener('install',e=>{e.waitUntil((async()=>{const c=await caches.open(APP);await Promise.allSettled([...LOCAL,...CDN].map(u=>c.add(u)));self.skipWaiting()})())});
 self.addEventListener('activate',e=>{e.waitUntil((async()=>{for(const k of await caches.keys())if(k.startsWith('angelkarte-')&&![APP,TILES].includes(k))await caches.delete(k);await clients.claim()})())});
 async function tile(req){
