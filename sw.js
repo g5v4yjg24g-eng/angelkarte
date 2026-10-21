@@ -1,4 +1,4 @@
-const APP='angelkarte-app-v4',TILES='angelkarte-tiles-v1',MAXTILES=3000;
+const APP='angelkarte-app-v5',TILES='angelkarte-tiles-v1',MAXTILES=3000;
 const CDN=['https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css','https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js','https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css','https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css','https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.js','https://cdnjs.cloudflare.com/ajax/libs/leaflet.heat/0.2.0/leaflet-heat.js'];
 const LOCAL=['./','index.html','recht.js','calendar.js','manifest.json','icon-192.png','icon-512.png'];
 self.addEventListener('install',e=>{e.waitUntil((async()=>{const c=await caches.open(APP);await Promise.allSettled([...LOCAL,...CDN].map(u=>c.add(u)));self.skipWaiting()})())});
@@ -11,6 +11,6 @@ async function tile(req){
 self.addEventListener('fetch',e=>{
  const r=e.request;if(r.method!=='GET')return;const u=new URL(r.url);
  if(u.hostname.endsWith('tile.openstreetmap.org'))return e.respondWith(tile(r).catch(()=>Response.error()));
- if(u.origin===location.origin)return e.respondWith(fetch(r).then(res=>{if(res.ok)caches.open(APP).then(c=>c.put(r,res.clone()));return res}).catch(()=>caches.match(r,{ignoreSearch:true}).then(h=>h||caches.match('index.html'))));
+ if(u.origin===location.origin)return e.respondWith(fetch(r,{cache:'no-store'}).then(res=>{if(res.ok)caches.open(APP).then(c=>c.put(r,res.clone()));return res}).catch(()=>caches.match(r,{ignoreSearch:true}).then(h=>h||caches.match('index.html'))));
  if(u.hostname==='cdnjs.cloudflare.com')return e.respondWith(caches.match(r).then(h=>h||fetch(r)));
 });
